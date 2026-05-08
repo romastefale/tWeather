@@ -23,3 +23,25 @@ def build_weather_message(location, weather):
         f" ⬆️ {round(daily['temperature_2m_max'][0])}°\n\n"
         f"☔ Chance de chuva: {daily['precipitation_probability_max'][0]}%"
     )
+
+
+def build_multi_day_forecast(location, weather, days: int):
+    daily = weather["daily"]
+    dates = daily["time"]
+    min_temp = daily["temperature_2m_min"]
+    max_temp = daily["temperature_2m_max"]
+    rain = daily["precipitation_probability_max"]
+
+    lines = [f"🌤 <b>{location['name']}</b>\n"]
+
+    for index in range(days):
+        lines.append(
+            (
+                f"📅 {dates[index]}\n"
+                f"⬇️ {round(min_temp[index])}°"
+                f" ⬆️ {round(max_temp[index])}°\n"
+                f"☔ {rain[index]}%\n"
+            )
+        )
+
+    return "\n".join(lines)
