@@ -43,12 +43,25 @@ def format_ptbr_date(date_string: str) -> str:
 
 def build_temperature_text(min_temp: int, max_temp: int):
     if max_temp >= 32:
-        return "Temperaturas elevadas durante a tarde."
+        return "Calor mais intenso durante a tarde."
 
     if min_temp <= 10:
         return "Amanhecer com temperaturas mais frias."
 
-    return f"Temperaturas entre {min_temp}° e {max_temp}°."
+    return "Temperatura estável ao longo do dia."
+
+
+
+def format_periods_as_quote(periods: str):
+    lines = periods.splitlines()
+
+    formatted = []
+
+    for line in lines:
+        if line.strip():
+            formatted.append(f"> {line}")
+
+    return "\n".join(formatted)
 
 
 
@@ -59,7 +72,9 @@ def build_weather_message(location, weather):
 
     emoji, weather_text = get_weather_data(current["weather_code"])
 
-    periods = build_day_periods(hourly)
+    periods = format_periods_as_quote(
+        build_day_periods(hourly)
+    )
 
     alerts = build_weather_alerts(weather)
 
