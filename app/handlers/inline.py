@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router
 from aiogram.types import (
     InlineQuery,
@@ -12,6 +14,7 @@ from app.utils.weather_formatter import build_weather_message
 from app.utils.wmo import get_weather_data
 
 router = Router()
+logger = logging.getLogger(__name__)
 
 
 @router.inline_query()
@@ -28,49 +31,66 @@ async def inline_weather(query: InlineQuery):
         )
         return
 
-    results = await search_location(text)
+    if len(text) < 3:
+        await query.answer(
+            results=[],
+            switch_pm_text='Digite pelo menos 3 caracteres',
+            switch_pm_parameter='start',
+            cache_time=1,
+            is_personal=True,
+        )
+        return
+
+    try:
+        results = await search_location(text)
+    except Exception:
+        logger.exception('Inline location search failed')
+        return
 
     articles = []
 
     for index, item in enumerate(results[:5]):
-        weather = await get_weather(
-            latitude=item["latitude"],
-            longitude=item["longitude"],
-        )
-
-        current = weather["current"]
-        daily = weather["daily"]
-
-        _, weather_text = get_weather_data(current['weather_code'])
-
-        message = build_weather_message(item, weather)
-
-        title = (
-            f"🌤 {item['name']}"
-        )
-
-        if item.get('admin1'):
-            title += f", {item['admin1']}"
-
-        description = (
-            f"{round(current['temperature_2m'])}°C • "
-            f"{weather_text} • "
-            f"⬇️ {round(daily['temperature_2m_min'][0])}° "
-            f"⬆️ {round(daily['temperature_2m_max'][0])}°"
-        )
-
-        articles.append(
-            InlineQueryResultArticle(
-                id=str(index),
-                title=title,
-                description=description,
-                input_message_content=InputTextMessageContent(
-                    message_text=message,
-                    parse_mode="HTML",
-                ),
-                reply_markup=weather_keyboard(),
+        try:
+            weather = await get_weather(
+                latitude=item["latitude"],
+                longitude=item["longitude"],
             )
-        )
+
+            current = weather["current"]
+            daily = weather["daily"]
+
+            _, weather_text = get_weather_data(current['weather_code'])
+
+            message = build_weather_message(item, weather)
+
+            title = (
+                f"🌤 {item['name']}"
+            )
+
+            if item.get('admin1'):
+                title += f", {item['admin1']}"
+
+            description = (
+                f"{round(current['temperature_2m'])}°C • "
+                f"{weather_text} • "
+                f"⬇️ {round(daily['temperature_2m_min'][0])}° "
+                f"⬆️ {round(daily['temperature_2m_max'][0])}°"
+            )
+
+            articles.append(
+                InlineQueryResultArticle(
+                    id=str(index),
+                    title=title,
+                    description=description,
+                    input_message_content=InputTextMessageContent(
+                        message_text=message,
+                        parse_mode="HTML",
+                    ),
+                    reply_markup=weather_keyboard(),
+                )
+            )
+        except Exception:
+            logger.exception('Inline weather render failed')
 
     await query.answer(
         articles,
