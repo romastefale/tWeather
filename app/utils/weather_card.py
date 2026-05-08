@@ -61,8 +61,8 @@ def draw_weather_icon(draw, weather_code: int, night: bool):
         draw.ellipse((810, 80, 930, 220), fill=(40, 60, 100))
         return
 
-    draw.ellipse((760, 110, 930, 260), fill=(240, 240, 245))
-    draw.ellipse((850, 90, 1000, 230), fill=(225, 225, 235))
+    draw.ellipse((740, 120, 920, 270), fill=(240, 240, 245))
+    draw.ellipse((840, 95, 1000, 245), fill=(225, 225, 235))
 
 
 
@@ -84,51 +84,60 @@ def render_weather_card(location, weather):
 
     draw_gradient(draw, color1, color2)
 
-    image = image.filter(ImageFilter.GaussianBlur(1.4))
+    image = image.filter(ImageFilter.GaussianBlur(1.3))
 
     draw = ImageDraw.Draw(image, 'RGBA')
 
     draw.rounded_rectangle(
         (60, 60, WIDTH - 60, HEIGHT - 60),
         radius=42,
-        fill=(255, 255, 255, 28),
-        outline=(255, 255, 255, 45),
+        fill=(255, 255, 255, 26),
+        outline=(255, 255, 255, 42),
         width=2,
     )
 
     draw_weather_icon(draw, weather_code, night)
 
-    title_font = load_font(52)
-    temp_font = load_font(190)
-    body_font = load_font(30)
+    title_font = load_font(54)
+    temp_font = load_font(200)
+    body_font = load_font(32)
     small_font = load_font(24)
 
-    draw.text((95, 90), location['name'], fill='white', font=title_font)
+    draw.text((95, 85), location['name'], fill='white', font=title_font)
 
-    draw.text((85, 170), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
+    draw.text((75, 160), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
 
-    draw.text((100, 400), weather_text, fill='white', font=body_font)
+    draw.text((100, 390), weather_text, fill='white', font=body_font)
 
     draw.text(
-        (100, 455),
+        (100, 445),
         f"Sensação {round(current['apparent_temperature'])}°",
         fill=(225, 225, 235),
         font=small_font,
     )
 
     metrics = [
-        ('14 km/h', 760),
-        ('76%', 900),
-        ('2%', 1040),
+        ('〰', '14 km/h', 760),
+        ('◖', '76%', 900),
+        ('☂', '2%', 1040),
     ]
 
-    metrics_icons = ['〰', '◖', '☂']
+    for icon, value, x in metrics:
+        draw.text(
+            (x - 15, 365),
+            icon,
+            fill=(235, 235, 245),
+            font=body_font,
+        )
 
-    for index, (value, x) in enumerate(metrics):
-        draw.text((x - 20, 390), metrics_icons[index], fill=(235,235,245), font=body_font)
-        draw.text((x - 35, 455), value, fill='white', font=body_font)
+        draw.text(
+            (x - 50, 435),
+            value,
+            fill='white',
+            font=body_font,
+        )
 
-    divider_color = (255, 255, 255, 50)
+    divider_color = (255, 255, 255, 45)
 
     draw.line((60, 520, WIDTH - 60, 520), fill=divider_color, width=2)
 
@@ -153,15 +162,18 @@ def render_weather_card(location, weather):
                 width=2,
             )
 
+        label_width = len(label) * 10
+        value_width = len(value) * 14
+
         draw.text(
-            (center_x - 55, 565),
+            (center_x - (label_width / 2), 565),
             label,
             fill=(220, 220, 235),
             font=small_font,
         )
 
         draw.text(
-            (center_x - 45, 625),
+            (center_x - (value_width / 2), 625),
             value,
             fill='white',
             font=body_font,
