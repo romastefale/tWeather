@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from app.utils.alerts import build_weather_alerts
 from app.utils.day_periods import build_day_periods
 from app.utils.wmo import get_weather_data
 
@@ -59,6 +60,8 @@ def build_weather_message(location, weather):
 
     periods = build_day_periods(hourly)
 
+    alerts = build_weather_alerts(weather)
+
     return (
         f"{emoji} <b>{location['name']}</b>\n\n"
         f"Agora: {round(current['temperature_2m'])}°C\n"
@@ -67,6 +70,7 @@ def build_weather_message(location, weather):
         f"💧 {current['relative_humidity_2m']}%\n\n"
         f"{weather_text}.\n"
         f"{build_temperature_text(round(daily['temperature_2m_min'][0]), round(daily['temperature_2m_max'][0]))}\n\n"
+        f"{alerts}\n\n"
         f"{periods}\n\n"
         f"⬇️ {round(daily['temperature_2m_min'][0])}°"
         f" ⬆️ {round(daily['temperature_2m_max'][0])}°\n"
