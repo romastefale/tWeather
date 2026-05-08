@@ -7,6 +7,12 @@ from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
+from app.utils.pending_locations import (
+    get_pending_location,
+    remove_pending_location,
+    set_pending_location,
+)
+from app.utils.reverse_geocoding import reverse_geocode
 from app.utils.telegram import safe_edit_text
 from app.utils.weather_formatter import (
     build_multi_day_forecast,
@@ -14,8 +20,6 @@ from app.utils.weather_formatter import (
 )
 
 router = Router()
-
-PENDING_LOCATIONS = {}
 
 
 @router.message(Command("buscar"))
@@ -32,7 +36,7 @@ async def buscar_handler(message: Message):
         await message.answer("Nenhum local encontrado.")
         return
 
-    PENDING_LOCATIONS[message.from_user.id] = results
+    set_pending_location(message.from_user.id, results)
 
     await message.answer(
         "📍 Selecione o local desejado:",
@@ -42,7 +46,7 @@ async def buscar_handler(message: Message):
 
 @router.callback_query(F.data.startswith("pick_location:"))
 async def pick_location_callback(callback: CallbackQuery):
-    results = PENDING_LOCATIONS.get(callback.from_user.id)
+    results = get_pending_location(callback.from_user.id)
 
     if not results:
         await callback.answer("Busca expirada", show_alert=True)
@@ -55,6 +59,8 @@ async def pick_location_callback(callback: CallbackQuery):
         return
 
     location = results[index]
+
+    remove_pending_location(callback.from_user.id)
 
     await save_user_location(
         user_id=callback.from_user.id,
@@ -83,7 +89,7 @@ async def pick_location_callback(callback: CallbackQuery):
 
 @router.callback_query(F.data == "cancel_location")
 async def cancel_location_callback(callback: CallbackQuery):
-    PENDING_LOCATIONS.pop(callback.from_user.id, None)
+    remove_pending_location(callback.from_user.id)
 
     await safe_edit_text(callback, "Busca cancelada.")
 
@@ -92,9 +98,14 @@ async def cancel_location_callback(callback: CallbackQuery):
 
 @router.message(F.location)
 async def location_handler(message: Message):
+    location_name = await reverse_geocode(
+        message.location.latitude,
+        message.location.longitude,
+    )
+
     await save_user_location(
         user_id=message.from_user.id,
-        name="Localização Atual",
+        name=location_name,
         latitude=message.location.latitude,
         longitude=message.location.longitude,
     )
@@ -105,7 +116,7 @@ async def location_handler(message: Message):
     )
 
     text = build_weather_message(
-        {"name": "Localização Atual"},
+        {"name": location_name},
         weather,
     )
 
@@ -148,7 +159,7 @@ async def quick_search_handler(message: Message):
     if not results:
         return
 
-    PENDING_LOCATIONS[message.from_user.id] = results
+    set_pending_location(message.from_user.id, results)
 
     await message.answer(
         "📍 Selecione o local desejado:",
@@ -177,9 +188,10 @@ async def weather_callback(callback: CallbackQuery):
     weather = await get_weather(
         latitude=location["latitude"],
         longitude=location["longitude"],
+        force_refresh=action == "refresh",
     )
 
-    if action == "today":
+    if action in ["today", "refresh"]:
         text = build_weather_message(location, weather)
     elif action == "3days":
         text = build_multi_day_forecast(location, weather, 3)
