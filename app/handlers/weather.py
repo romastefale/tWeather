@@ -26,6 +26,9 @@ from app.utils.weather_formatter import (
 router = Router()
 logger = logging.getLogger(__name__)
 
+TODAY_FORECAST_DAYS = 1
+MULTI_FORECAST_DAYS = 5
+
 
 @router.message(Command("buscar"))
 async def buscar_handler(message: Message):
@@ -85,6 +88,7 @@ async def pick_location_callback(callback: CallbackQuery):
         latitude=location["latitude"],
         longitude=location["longitude"],
         force_refresh=True,
+        forecast_days=TODAY_FORECAST_DAYS,
     )
 
     text = build_weather_message(location, weather)
@@ -130,6 +134,7 @@ async def location_handler(message: Message):
         latitude=message.location.latitude,
         longitude=message.location.longitude,
         force_refresh=True,
+        forecast_days=TODAY_FORECAST_DAYS,
     )
 
     location = {"name": location_name}
@@ -161,6 +166,7 @@ async def tempo_handler(message: Message):
         latitude=location["latitude"],
         longitude=location["longitude"],
         force_refresh=True,
+        forecast_days=TODAY_FORECAST_DAYS,
     )
 
     text = build_weather_message(location, weather)
@@ -222,17 +228,31 @@ async def weather_callback(callback: CallbackQuery):
         await callback.answer("Local não encontrado", show_alert=True)
         return
 
-    weather = await get_weather(
-        latitude=location["latitude"],
-        longitude=location["longitude"],
-        force_refresh=True,
-    )
-
     if action == "5days":
+        weather = await get_weather(
+            latitude=location["latitude"],
+            longitude=location["longitude"],
+            force_refresh=True,
+            forecast_days=MULTI_FORECAST_DAYS,
+        )
+
         set_weather_mode(callback.from_user.id, "5days")
-        text = build_multi_day_forecast(location, weather, 5)
+
+        text = build_multi_day_forecast(
+            location,
+            weather,
+            MULTI_FORECAST_DAYS,
+        )
     else:
+        weather = await get_weather(
+            latitude=location["latitude"],
+            longitude=location["longitude"],
+            force_refresh=True,
+            forecast_days=TODAY_FORECAST_DAYS,
+        )
+
         set_weather_mode(callback.from_user.id, "today")
+
         text = build_weather_message(location, weather)
 
     await safe_edit_text(
