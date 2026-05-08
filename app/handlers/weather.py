@@ -140,7 +140,7 @@ async def pick_location_callback(callback: CallbackQuery):
     )
 
     if callback.message:
-        await send_weather_card(callback.message, location, weather)
+        await send_weather_card(callback.message, location, weather, text)
 
     await callback.answer("Local selecionado")
 
@@ -180,12 +180,7 @@ async def location_handler(message: Message):
 
     text = build_weather_message(location, weather)
 
-    await message.answer(
-        text,
-        reply_markup=weather_keyboard(),
-    )
-
-    await send_weather_card(message, location, weather)
+    await send_weather_card(message, location, weather, text)
 
 
 @router.message(Command("tempo"))
@@ -208,12 +203,7 @@ async def tempo_handler(message: Message):
 
     text = build_weather_message(location, weather)
 
-    await message.answer(
-        text,
-        reply_markup=weather_keyboard(),
-    )
-
-    await send_weather_card(message, location, weather)
+    await send_weather_card(message, location, weather, text)
 
 
 @router.message()
