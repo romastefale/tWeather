@@ -4,6 +4,7 @@ from app.services.cache_service import (
     get_cached_weather,
     save_weather_cache,
 )
+from app.utils.retry import async_retry
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
@@ -15,11 +16,10 @@ async def get_weather(
 ):
     cache_key = f"{round(latitude, 2)}:{round(longitude, 2)}"
 
-    if not force_refresh:
-        cached = await get_cached_weather(cache_key)
+    cached = await get_cached_weather(cache_key)
 
-        if cached:
-            return cached
+    if cached and not force_refresh:
+        return cached
 
     params = {
         "latitude": latitude,
@@ -47,11 +47,25 @@ async def get_weather(
         "forecast_days": 15,
     }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(WEATHER_URL, params=params, timeout=15) as response:
-            response.raise_for_status()
-            data = await response.json()
+    async def fetch_weather():
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                WEATHER_URL,
+                params=params,
+                timeout=15,
+            ) as response:
+                response.raise_for_status()
+                return await response.json()
 
-    await save_weather_cache(cache_key, data)
+    try:
+        data = await async_retry(fetch_weather)
 
-    return data
+        await save_weather_cache(cache_key, data)
+
+        return data
+
+    except Exception:
+        if cached:
+            return cached
+
+        raise
