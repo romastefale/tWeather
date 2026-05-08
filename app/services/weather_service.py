@@ -1,9 +1,21 @@
 import aiohttp
 
+from app.services.cache_service import (
+    get_cached_weather,
+    save_weather_cache,
+)
+
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 
 async def get_weather(latitude: float, longitude: float):
+    cache_key = f"{round(latitude, 2)}:{round(longitude, 2)}"
+
+    cached = await get_cached_weather(cache_key)
+
+    if cached:
+        return cached
+
     params = {
         "latitude": latitude,
         "longitude": longitude,
@@ -24,4 +36,8 @@ async def get_weather(latitude: float, longitude: float):
 
     async with aiohttp.ClientSession() as session:
         async with session.get(WEATHER_URL, params=params) as response:
-            return await response.json()
+            data = await response.json()
+
+    await save_weather_cache(cache_key, data)
+
+    return data
