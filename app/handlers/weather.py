@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
 from app.keyboards.location_results import multiple_locations_keyboard
 from app.keyboards.weather import weather_keyboard
@@ -15,12 +15,27 @@ from app.utils.pending_locations import (
 from app.utils.rate_limit import is_rate_limited
 from app.utils.reverse_geocoding import reverse_geocode
 from app.utils.telegram import safe_edit_text
+from app.utils.weather_card import render_weather_card
 from app.utils.weather_formatter import (
     build_multi_day_forecast,
     build_weather_message,
 )
 
 router = Router()
+
+
+async def send_weather_card(message: Message, location, weather):
+    try:
+        image = render_weather_card(location, weather)
+
+        await message.answer_photo(
+            BufferedInputFile(
+                image.read(),
+                filename="weather.png",
+            )
+        )
+    except Exception:
+        return
 
 
 @router.message(Command("buscar"))
@@ -88,6 +103,9 @@ async def pick_location_callback(callback: CallbackQuery):
         reply_markup=weather_keyboard(),
     )
 
+    if callback.message:
+        await send_weather_card(callback.message, location, weather)
+
     await callback.answer("Local selecionado")
 
 
@@ -122,15 +140,16 @@ async def location_handler(message: Message):
         longitude=message.location.longitude,
     )
 
-    text = build_weather_message(
-        {"name": location_name},
-        weather,
-    )
+    location = {"name": location_name}
+
+    text = build_weather_message(location, weather)
 
     await message.answer(
         text,
         reply_markup=weather_keyboard(),
     )
+
+    await send_weather_card(message, location, weather)
 
 
 @router.message(Command("tempo"))
@@ -157,6 +176,8 @@ async def tempo_handler(message: Message):
         text,
         reply_markup=weather_keyboard(),
     )
+
+    await send_weather_card(message, location, weather)
 
 
 @router.message()
@@ -218,5 +239,8 @@ async def weather_callback(callback: CallbackQuery):
         text,
         reply_markup=weather_keyboard(),
     )
+
+    if callback.message and action in ["today", "refresh"]:
+        await send_weather_card(callback.message, location, weather)
 
     await callback.answer("Atualizado")
