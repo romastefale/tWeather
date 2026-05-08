@@ -1,9 +1,8 @@
-import aiohttp
-
 from app.services.cache_service import (
     get_cached_weather,
     save_weather_cache,
 )
+from app.services.http_client import get_http_session
 from app.utils.logger import get_logger
 from app.utils.retry import async_retry
 
@@ -58,14 +57,15 @@ async def get_weather(
             longitude,
         )
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                WEATHER_URL,
-                params=params,
-                timeout=15,
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
+        session = await get_http_session()
+
+        async with session.get(
+            WEATHER_URL,
+            params=params,
+            timeout=15,
+        ) as response:
+            response.raise_for_status()
+            return await response.json()
 
     try:
         data = await async_retry(fetch_weather)
