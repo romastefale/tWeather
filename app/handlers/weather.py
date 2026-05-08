@@ -11,6 +11,7 @@ from app.services.card_settings_service import (
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
+from app.utils.card_cache import get_card_cache, save_card_cache
 from app.utils.pending_locations import (
     get_pending_location,
     remove_pending_location,
@@ -35,11 +36,22 @@ async def send_weather_card(message: Message, location, weather):
         return
 
     try:
-        image = render_weather_card(location, weather)
+        weather_code = weather['current']['weather_code']
+        temperature = round(weather['current']['temperature_2m'])
+
+        cache_key = f"{location['name']}:{weather_code}:{temperature}"
+
+        image_bytes = get_card_cache(cache_key)
+
+        if image_bytes is None:
+            image = render_weather_card(location, weather)
+            image_bytes = image.read()
+
+            save_card_cache(cache_key, image_bytes)
 
         await message.answer_photo(
             BufferedInputFile(
-                image.read(),
+                image_bytes,
                 filename="weather.png",
             )
         )
