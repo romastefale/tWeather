@@ -8,13 +8,18 @@ from app.services.cache_service import (
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 
-async def get_weather(latitude: float, longitude: float):
+async def get_weather(
+    latitude: float,
+    longitude: float,
+    force_refresh: bool = False,
+):
     cache_key = f"{round(latitude, 2)}:{round(longitude, 2)}"
 
-    cached = await get_cached_weather(cache_key)
+    if not force_refresh:
+        cached = await get_cached_weather(cache_key)
 
-    if cached:
-        return cached
+        if cached:
+            return cached
 
     params = {
         "latitude": latitude,
