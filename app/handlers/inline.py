@@ -5,6 +5,7 @@ from aiogram.types import (
     InputTextMessageContent,
 )
 
+from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.weather_service import get_weather
 from app.utils.weather_formatter import build_weather_message
@@ -29,17 +30,23 @@ async def inline_weather(query: InlineQuery):
             longitude=item["longitude"],
         )
 
+        current = weather["current"]
+
         message = build_weather_message(item, weather)
 
         articles.append(
             InlineQueryResultArticle(
                 id=str(index),
-                title=f"{item['name']} - {item.get('country', '')}",
-                description="Previsão do tempo",
+                title=f"{item['name']} - {item.get('admin1', '')}",
+                description=(
+                    f"{round(current['temperature_2m'])}°C • "
+                    f"Sensação {round(current['apparent_temperature'])}°C"
+                ),
                 input_message_content=InputTextMessageContent(
                     message_text=message,
                     parse_mode="HTML",
                 ),
+                reply_markup=weather_keyboard(),
             )
         )
 
