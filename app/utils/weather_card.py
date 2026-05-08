@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from app.utils.wmo import get_weather_data
 
 WIDTH = 1080
-HEIGHT = 1350
+HEIGHT = 720
 
 
 
@@ -17,13 +17,13 @@ def is_night(weather):
 
 def get_background_colors(weather_code: int, night: bool = False):
     if night:
-        return ((20, 30, 60), (50, 70, 110))
+        return ((14, 24, 58), (60, 78, 120))
 
     if weather_code in [0, 1]:
         return ((76, 163, 255), (140, 210, 255))
 
     if weather_code in [2, 3, 45, 48]:
-        return ((90, 110, 140), (140, 160, 180))
+        return ((72, 88, 124), (104, 122, 160))
 
     if weather_code in [61, 63, 65, 80, 81, 82]:
         return ((50, 80, 140), (90, 120, 180))
@@ -57,21 +57,15 @@ def draw_gradient(draw, color1, color2):
 
 def draw_weather_icon(draw, weather_code: int, night: bool):
     if night:
-        draw.ellipse((780, 170, 930, 320), fill=(245, 245, 220))
-        draw.ellipse((830, 160, 950, 310), fill=(40, 60, 100))
+        draw.ellipse((760, 90, 900, 230), fill=(245, 245, 220))
+        draw.ellipse((810, 80, 930, 220), fill=(40, 60, 100))
         return
 
     if weather_code in [0, 1]:
-        draw.ellipse((760, 170, 930, 340), fill=(255, 215, 80))
-    elif weather_code in [2, 3, 45, 48]:
-        draw.ellipse((730, 190, 920, 320), fill=(240, 240, 245))
-        draw.ellipse((820, 160, 980, 300), fill=(225, 225, 235))
+        draw.ellipse((760, 90, 920, 250), fill=(255, 215, 80))
     else:
-        draw.ellipse((730, 190, 920, 320), fill=(230, 230, 235))
-        draw.ellipse((820, 160, 980, 300), fill=(210, 210, 225))
-
-        for x in [780, 840, 900]:
-            draw.line((x, 330, x - 20, 390), fill=(180, 220, 255), width=10)
+        draw.ellipse((740, 110, 900, 220), fill=(240, 240, 245))
+        draw.ellipse((810, 90, 960, 210), fill=(225, 225, 235))
 
 
 
@@ -93,52 +87,48 @@ def render_weather_card(location, weather):
 
     draw_gradient(draw, color1, color2)
 
-    image = image.filter(ImageFilter.GaussianBlur(1.2))
+    image = image.filter(ImageFilter.GaussianBlur(1.6))
 
     draw = ImageDraw.Draw(image, 'RGBA')
 
-    draw.rounded_rectangle((40, 40, WIDTH - 40, HEIGHT - 40), radius=55, fill=(255, 255, 255, 28))
+    draw.rounded_rectangle((60, 60, WIDTH - 60, HEIGHT - 60), radius=42, fill=(255, 255, 255, 30), outline=(255,255,255,40), width=2)
 
     draw_weather_icon(draw, weather_code, night)
 
-    title_font = load_font(54)
-    temp_font = load_font(250)
-    body_font = load_font(42)
-    small_font = load_font(34)
+    title_font = load_font(46)
+    temp_font = load_font(170)
+    body_font = load_font(34)
+    small_font = load_font(28)
 
-    draw.text((80, 90), location['name'], fill='white', font=title_font)
+    draw.text((100, 95), location['name'], fill='white', font=title_font)
+    draw.text((100, 180), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
+    draw.text((110, 390), weather_text, fill='white', font=body_font)
+    draw.text((110, 445), f"Sensação {round(current['apparent_temperature'])}°", fill=(235, 235, 235), font=small_font)
 
-    draw.text((80, 220), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
+    metrics_y = 520
 
-    draw.text((90, 520), weather_text, fill='white', font=body_font)
-
-    draw.text((90, 590), f"Sensação {round(current['apparent_temperature'])}°", fill=(240, 240, 240), font=small_font)
-
-    panel_y = 760
-
-    draw.rounded_rectangle((60, panel_y, WIDTH - 60, panel_y + 220), radius=40, fill=(255, 255, 255, 35))
-
-    sections = [
+    metrics = [
         ('Mínima', f"{round(daily['temperature_2m_min'][0])}°", 120),
-        ('Máxima', f"{round(daily['temperature_2m_max'][0])}°", 430),
-        ('Chuva', f"{daily['precipitation_probability_max'][0]}%", 760),
+        ('Máxima', f"{round(daily['temperature_2m_max'][0])}°", 420),
+        ('Chuva', f"{daily['precipitation_probability_max'][0]}%", 720),
     ]
 
-    for title, value, x in sections:
-        draw.text((x, panel_y + 45), title, fill=(240, 240, 240), font=small_font)
-        draw.text((x, panel_y + 105), value, fill='white', font=body_font)
+    for title, value, x in metrics:
+        draw.text((x, metrics_y), title, fill=(220, 220, 235), font=small_font)
+        draw.text((x, metrics_y + 48), value, fill='white', font=body_font)
+
+    divider_color = (255, 255, 255, 50)
+
+    draw.line((360, 515, 360, 635), fill=divider_color, width=2)
+    draw.line((660, 515, 660, 635), fill=divider_color, width=2)
 
     mini_days = ['Hoje', 'Amanhã', '3° dia']
 
-    mini_y = 1080
-
-    draw.rounded_rectangle((60, mini_y, WIDTH - 60, mini_y + 170), radius=35, fill=(255, 255, 255, 25))
-
     for index, label in enumerate(mini_days):
-        x = 120 + (index * 300)
+        x = 520 + (index * 160)
 
-        draw.text((x, mini_y + 30), label, fill=(240, 240, 240), font=small_font)
-        draw.text((x, mini_y + 90), f"{round(daily['temperature_2m_max'][index])}°", fill='white', font=body_font)
+        draw.text((x, 520), label, fill=(220, 220, 235), font=small_font)
+        draw.text((x, 575), f"{round(daily['temperature_2m_max'][index])}°", fill='white', font=body_font)
 
     output = BytesIO()
 
