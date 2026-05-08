@@ -7,6 +7,7 @@ from app.utils.logger import get_logger
 from app.utils.retry import async_retry
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+REQUEST_TIMEOUT = 8
 
 logger = get_logger(__name__)
 
@@ -62,7 +63,7 @@ async def get_weather(
         async with session.get(
             WEATHER_URL,
             params=params,
-            timeout=15,
+            timeout=REQUEST_TIMEOUT,
         ) as response:
             response.raise_for_status()
             return await response.json()
