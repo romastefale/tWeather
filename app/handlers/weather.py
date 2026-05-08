@@ -6,24 +6,9 @@ from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
+from app.utils.weather_formatter import build_weather_message
 
 router = Router()
-
-
-def build_weather_text(location, weather):
-    current = weather["current"]
-    daily = weather["daily"]
-
-    return (
-        f"🌤 <b>{location['name']}</b>\n\n"
-        f"Agora: {round(current['temperature_2m'])}°C\n"
-        f"Sensação: {round(current['apparent_temperature'])}°C\n"
-        f"💨 {round(current['wind_speed_10m'])} km/h\n"
-        f"💧 {current['relative_humidity_2m']}%\n\n"
-        f"Hoje\n"
-        f"⬇️ {round(daily['temperature_2m_min'][0])}°"
-        f" ⬆️ {round(daily['temperature_2m_max'][0])}°"
-    )
 
 
 @router.message(Command("buscar"))
@@ -81,7 +66,7 @@ async def tempo_handler(message: Message):
         longitude=location["longitude"],
     )
 
-    text = build_weather_text(location, weather)
+    text = build_weather_message(location, weather)
 
     await message.answer(
         text,
