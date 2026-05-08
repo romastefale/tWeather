@@ -61,11 +61,8 @@ def draw_weather_icon(draw, weather_code: int, night: bool):
         draw.ellipse((810, 80, 930, 220), fill=(40, 60, 100))
         return
 
-    if weather_code in [0, 1]:
-        draw.ellipse((760, 90, 920, 250), fill=(255, 215, 80))
-    else:
-        draw.ellipse((740, 110, 900, 220), fill=(240, 240, 245))
-        draw.ellipse((810, 90, 960, 210), fill=(225, 225, 235))
+    draw.ellipse((760, 110, 930, 260), fill=(240, 240, 245))
+    draw.ellipse((850, 90, 1000, 230), fill=(225, 225, 235))
 
 
 
@@ -87,48 +84,88 @@ def render_weather_card(location, weather):
 
     draw_gradient(draw, color1, color2)
 
-    image = image.filter(ImageFilter.GaussianBlur(1.6))
+    image = image.filter(ImageFilter.GaussianBlur(1.4))
 
     draw = ImageDraw.Draw(image, 'RGBA')
 
-    draw.rounded_rectangle((60, 60, WIDTH - 60, HEIGHT - 60), radius=42, fill=(255, 255, 255, 30), outline=(255,255,255,40), width=2)
+    draw.rounded_rectangle(
+        (60, 60, WIDTH - 60, HEIGHT - 60),
+        radius=42,
+        fill=(255, 255, 255, 28),
+        outline=(255, 255, 255, 45),
+        width=2,
+    )
 
     draw_weather_icon(draw, weather_code, night)
 
-    title_font = load_font(46)
-    temp_font = load_font(170)
-    body_font = load_font(34)
-    small_font = load_font(28)
+    title_font = load_font(52)
+    temp_font = load_font(190)
+    body_font = load_font(30)
+    small_font = load_font(24)
 
-    draw.text((100, 95), location['name'], fill='white', font=title_font)
-    draw.text((100, 180), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
-    draw.text((110, 390), weather_text, fill='white', font=body_font)
-    draw.text((110, 445), f"Sensação {round(current['apparent_temperature'])}°", fill=(235, 235, 235), font=small_font)
+    draw.text((95, 90), location['name'], fill='white', font=title_font)
 
-    metrics_y = 520
+    draw.text((85, 170), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
+
+    draw.text((100, 400), weather_text, fill='white', font=body_font)
+
+    draw.text(
+        (100, 455),
+        f"Sensação {round(current['apparent_temperature'])}°",
+        fill=(225, 225, 235),
+        font=small_font,
+    )
 
     metrics = [
-        ('Mínima', f"{round(daily['temperature_2m_min'][0])}°", 120),
-        ('Máxima', f"{round(daily['temperature_2m_max'][0])}°", 420),
-        ('Chuva', f"{daily['precipitation_probability_max'][0]}%", 720),
+        ('14 km/h', 760),
+        ('76%', 900),
+        ('2%', 1040),
     ]
 
-    for title, value, x in metrics:
-        draw.text((x, metrics_y), title, fill=(220, 220, 235), font=small_font)
-        draw.text((x, metrics_y + 48), value, fill='white', font=body_font)
+    metrics_icons = ['〰', '◖', '☂']
+
+    for index, (value, x) in enumerate(metrics):
+        draw.text((x - 20, 390), metrics_icons[index], fill=(235,235,245), font=body_font)
+        draw.text((x - 35, 455), value, fill='white', font=body_font)
 
     divider_color = (255, 255, 255, 50)
 
-    draw.line((360, 515, 360, 635), fill=divider_color, width=2)
-    draw.line((660, 515, 660, 635), fill=divider_color, width=2)
+    draw.line((60, 520, WIDTH - 60, 520), fill=divider_color, width=2)
 
-    mini_days = ['Hoje', 'Amanhã', '3° dia']
+    section_width = (WIDTH - 120) / 5
 
-    for index, label in enumerate(mini_days):
-        x = 520 + (index * 160)
+    bottom_items = [
+        ('Mínima', f"{round(daily['temperature_2m_min'][0])}°"),
+        ('Máxima', f"{round(daily['temperature_2m_max'][0])}°"),
+        ('Hoje', f"{round(daily['temperature_2m_max'][0])}°"),
+        ('Amanhã', f"{round(daily['temperature_2m_max'][1])}°"),
+        ('3° dia', f"{round(daily['temperature_2m_max'][2])}°"),
+    ]
 
-        draw.text((x, 520), label, fill=(220, 220, 235), font=small_font)
-        draw.text((x, 575), f"{round(daily['temperature_2m_max'][index])}°", fill='white', font=body_font)
+    for index, (label, value) in enumerate(bottom_items):
+        x = 60 + (section_width * index)
+        center_x = x + (section_width / 2)
+
+        if index > 0:
+            draw.line(
+                (x, 555, x, 660),
+                fill=divider_color,
+                width=2,
+            )
+
+        draw.text(
+            (center_x - 55, 565),
+            label,
+            fill=(220, 220, 235),
+            font=small_font,
+        )
+
+        draw.text(
+            (center_x - 45, 625),
+            value,
+            fill='white',
+            font=body_font,
+        )
 
     output = BytesIO()
 
