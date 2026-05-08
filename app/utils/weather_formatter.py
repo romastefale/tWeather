@@ -52,19 +52,6 @@ def build_temperature_text(min_temp: int, max_temp: int):
 
 
 
-def format_periods_as_quote(periods: str):
-    lines = periods.splitlines()
-
-    formatted = []
-
-    for line in lines:
-        if line.strip():
-            formatted.append(f"> {line}")
-
-    return "\n".join(formatted)
-
-
-
 def build_weather_message(location, weather):
     current = weather["current"]
     daily = weather["daily"]
@@ -72,9 +59,7 @@ def build_weather_message(location, weather):
 
     emoji, weather_text = get_weather_data(current["weather_code"])
 
-    periods = format_periods_as_quote(
-        build_day_periods(hourly)
-    )
+    periods = build_day_periods(hourly)
 
     alerts = build_weather_alerts(weather)
 
