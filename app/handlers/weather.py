@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
+from app.keyboards.search import confirm_location_keyboard
 from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
@@ -13,13 +14,15 @@ from app.utils.weather_formatter import (
 
 router = Router()
 
+PENDING_LOCATIONS = {}
+
 
 @router.message(Command("buscar"))
 async def buscar_handler(message: Message):
     query = message.text.replace("/buscar", "").strip()
 
     if not query:
-        await message.answer("Envie uma cidade. Exemplo: /buscar Sorocaba")
+        await message.answer("Envie uma cidade. Exemplo: /buscar Rio de Janeiro")
         return
 
     results = await search_location(query)
@@ -30,16 +33,59 @@ async def buscar_handler(message: Message):
 
     first = results[0]
 
-    await save_user_location(
-        user_id=message.from_user.id,
-        name=first["name"],
-        country=first.get("country"),
-        admin1=first.get("admin1"),
-        latitude=first["latitude"],
-        longitude=first["longitude"],
+    PENDING_LOCATIONS[message.from_user.id] = first
+
+    state = first.get("admin1", "")
+    country = first.get("country", "")
+
+    await message.answer(
+        (
+            f"📍 Você quis dizer:\n\n"
+            f"<b>{first['name']}, {state}, {country}</b>?"
+        ),
+        reply_markup=confirm_location_keyboard(0),
     )
 
-    await message.answer(f"📍 Local salvo: {first['name']}")
+
+@router.callback_query(F.data.startswith("confirm_location:"))
+async def confirm_location_callback(callback: CallbackQuery):
+    location = PENDING_LOCATIONS.get(callback.from_user.id)
+
+    if not location:
+        await callback.answer("Local expirado", show_alert=True)
+        return
+
+    await save_user_location(
+        user_id=callback.from_user.id,
+        name=location["name"],
+        country=location.get("country"),
+        admin1=location.get("admin1"),
+        latitude=location["latitude"],
+        longitude=location["longitude"],
+    )
+
+    weather = await get_weather(
+        latitude=location["latitude"],
+        longitude=location["longitude"],
+    )
+
+    text = build_weather_message(location, weather)
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=weather_keyboard(),
+    )
+
+    await callback.answer("Local confirmado")
+
+
+@router.callback_query(F.data == "cancel_location")
+async def cancel_location_callback(callback: CallbackQuery):
+    PENDING_LOCATIONS.pop(callback.from_user.id, None)
+
+    await callback.message.edit_text("Busca cancelada.")
+
+    await callback.answer("Cancelado")
 
 
 @router.message(F.location)
