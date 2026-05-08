@@ -6,17 +6,17 @@ def weather_keyboard():
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="Hoje",
+                    text="🟦 Hoje",
                     callback_data="weather:today",
                 ),
                 InlineKeyboardButton(
-                    text="7 dias",
+                    text="🟩 7 dias",
                     callback_data="weather:7days",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text="15 dias",
+                    text="🟪 15 dias",
                     callback_data="weather:15days",
                 ),
             ],
