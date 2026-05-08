@@ -17,21 +17,18 @@ def is_night(weather):
 
 def get_background_colors(weather_code: int, night: bool = False):
     if night:
-        return ((14, 24, 58), (60, 78, 120))
+        return ((10, 24, 60), (45, 70, 120))
 
     if weather_code in [0, 1]:
-        return ((76, 163, 255), (140, 210, 255))
+        return ((55, 120, 235), (100, 170, 255))
 
     if weather_code in [2, 3, 45, 48]:
-        return ((72, 88, 124), (104, 122, 160))
+        return ((60, 82, 132), (88, 110, 165))
 
     if weather_code in [61, 63, 65, 80, 81, 82]:
-        return ((50, 80, 140), (90, 120, 180))
+        return ((45, 78, 145), (70, 110, 180))
 
-    if weather_code == 95:
-        return ((55, 45, 90), (100, 90, 140))
-
-    return ((76, 163, 255), (140, 210, 255))
+    return ((55, 120, 235), (100, 170, 255))
 
 
 
@@ -55,14 +52,14 @@ def draw_gradient(draw, color1, color2):
 
 
 
-def draw_weather_icon(draw, weather_code: int, night: bool):
+def draw_weather_icon(draw, night: bool):
     if night:
         draw.ellipse((760, 90, 900, 230), fill=(245, 245, 220))
-        draw.ellipse((810, 80, 930, 220), fill=(40, 60, 100))
+        draw.ellipse((815, 80, 935, 220), fill=(30, 50, 95))
         return
 
-    draw.ellipse((740, 120, 920, 270), fill=(240, 240, 245))
-    draw.ellipse((840, 95, 1000, 245), fill=(225, 225, 235))
+    draw.ellipse((760, 120, 930, 270), fill=(248, 248, 252))
+    draw.ellipse((855, 95, 1015, 245), fill=(232, 232, 240))
 
 
 
@@ -84,60 +81,78 @@ def render_weather_card(location, weather):
 
     draw_gradient(draw, color1, color2)
 
-    image = image.filter(ImageFilter.GaussianBlur(1.3))
+    image = image.filter(ImageFilter.GaussianBlur(1.1))
 
-    draw = ImageDraw.Draw(image, 'RGBA')
+    overlay = Image.new('RGBA', (WIDTH, HEIGHT), (255, 255, 255, 0))
 
-    draw.rounded_rectangle(
+    overlay_draw = ImageDraw.Draw(overlay)
+
+    overlay_draw.rounded_rectangle(
         (60, 60, WIDTH - 60, HEIGHT - 60),
-        radius=42,
-        fill=(255, 255, 255, 26),
-        outline=(255, 255, 255, 42),
+        radius=46,
+        fill=(255, 255, 255, 20),
+        outline=(255, 255, 255, 55),
         width=2,
     )
 
-    draw_weather_icon(draw, weather_code, night)
+    overlay = overlay.filter(ImageFilter.GaussianBlur(0.5))
 
-    title_font = load_font(54)
-    temp_font = load_font(200)
-    body_font = load_font(32)
+    image = Image.alpha_composite(
+        image.convert('RGBA'),
+        overlay,
+    ).convert('RGB')
+
+    draw = ImageDraw.Draw(image, 'RGBA')
+
+    draw_weather_icon(draw, night)
+
+    title_font = load_font(56)
+    temp_font = load_font(205)
+    body_font = load_font(34)
     small_font = load_font(24)
 
-    draw.text((95, 85), location['name'], fill='white', font=title_font)
+    draw.text((95, 82), location['name'], fill='white', font=title_font)
 
-    draw.text((75, 160), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
+    draw.text((72, 150), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
 
-    draw.text((100, 390), weather_text, fill='white', font=body_font)
+    draw.text((102, 392), weather_text, fill='white', font=body_font)
 
     draw.text(
-        (100, 445),
+        (102, 448),
         f"Sensação {round(current['apparent_temperature'])}°",
-        fill=(225, 225, 235),
+        fill=(220, 225, 235),
         font=small_font,
     )
 
     metrics = [
-        ('〰', '14 km/h', 760),
-        ('◖', '76%', 900),
-        ('☂', '2%', 1040),
+        ('〰', f"{round(current['wind_speed_10m'])} km/h", 760),
+        ('◖', f"{current['relative_humidity_2m']}%", 900),
+        ('☂', f"{daily['precipitation_probability_max'][0]}%", 1040),
     ]
 
-    for icon, value, x in metrics:
+    divider_color = (255, 255, 255, 42)
+
+    for index, (icon, value, x) in enumerate(metrics):
+        if index > 0:
+            draw.line(
+                (x - 70, 360, x - 70, 470),
+                fill=divider_color,
+                width=2,
+            )
+
         draw.text(
-            (x - 15, 365),
+            (x - 15, 360),
             icon,
             fill=(235, 235, 245),
             font=body_font,
         )
 
         draw.text(
-            (x - 50, 435),
+            (x - 60, 430),
             value,
             fill='white',
             font=body_font,
         )
-
-    divider_color = (255, 255, 255, 45)
 
     draw.line((60, 520, WIDTH - 60, 520), fill=divider_color, width=2)
 
@@ -157,13 +172,16 @@ def render_weather_card(location, weather):
 
         if index > 0:
             draw.line(
-                (x, 555, x, 660),
+                (x, 555, x, 655),
                 fill=divider_color,
                 width=2,
             )
 
-        label_width = len(label) * 10
-        value_width = len(value) * 14
+        bbox_label = draw.textbbox((0, 0), label, font=small_font)
+        bbox_value = draw.textbbox((0, 0), value, font=body_font)
+
+        label_width = bbox_label[2] - bbox_label[0]
+        value_width = bbox_value[2] - bbox_value[0]
 
         draw.text(
             (center_x - (label_width / 2), 565),
