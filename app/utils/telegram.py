@@ -1,5 +1,9 @@
+import logging
+
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
+
+logger = logging.getLogger(__name__)
 
 
 async def safe_edit_text(
@@ -15,15 +19,27 @@ async def safe_edit_text(
                 reply_markup=reply_markup,
                 parse_mode="HTML",
             )
-        else:
-            await callback.message.edit_text(
-                text,
+            return
+
+        if callback.message.photo:
+            await callback.message.edit_caption(
+                caption=text,
                 reply_markup=reply_markup,
+                parse_mode="HTML",
             )
+            return
+
+        await callback.message.edit_text(
+            text,
+            reply_markup=reply_markup,
+            parse_mode="HTML",
+        )
 
     except TelegramBadRequest as error:
         if "message is not modified" in str(error):
             return
 
+        logger.exception('Telegram edit failed')
+
     except Exception:
-        return
+        logger.exception('safe_edit_text failed')
