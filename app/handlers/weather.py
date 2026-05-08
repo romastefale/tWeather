@@ -7,6 +7,7 @@ from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
+from app.utils.telegram import safe_edit_text
 from app.utils.weather_formatter import (
     build_multi_day_forecast,
     build_weather_message,
@@ -71,7 +72,8 @@ async def pick_location_callback(callback: CallbackQuery):
 
     text = build_weather_message(location, weather)
 
-    await callback.message.edit_text(
+    await safe_edit_text(
+        callback,
         text,
         reply_markup=weather_keyboard(),
     )
@@ -83,7 +85,7 @@ async def pick_location_callback(callback: CallbackQuery):
 async def cancel_location_callback(callback: CallbackQuery):
     PENDING_LOCATIONS.pop(callback.from_user.id, None)
 
-    await callback.message.edit_text("Busca cancelada.")
+    await safe_edit_text(callback, "Busca cancelada.")
 
     await callback.answer("Cancelado")
 
@@ -159,7 +161,8 @@ async def weather_callback(callback: CallbackQuery):
     action = callback.data.split(":")[1]
 
     if action == "change_city":
-        await callback.message.edit_text(
+        await safe_edit_text(
+            callback,
             "📍 Envie o nome de uma cidade para trocar o local.")
 
         await callback.answer("Trocar cidade")
@@ -185,7 +188,8 @@ async def weather_callback(callback: CallbackQuery):
     else:
         text = build_multi_day_forecast(location, weather, 15)
 
-    await callback.message.edit_text(
+    await safe_edit_text(
+        callback,
         text,
         reply_markup=weather_keyboard(),
     )
