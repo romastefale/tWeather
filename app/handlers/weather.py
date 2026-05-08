@@ -156,6 +156,15 @@ async def quick_search_handler(message: Message):
 
 @router.callback_query(F.data.startswith("weather:"))
 async def weather_callback(callback: CallbackQuery):
+    action = callback.data.split(":")[1]
+
+    if action == "change_city":
+        await callback.message.edit_text(
+            "📍 Envie o nome de uma cidade para trocar o local.")
+
+        await callback.answer("Trocar cidade")
+        return
+
     location = await get_user_location(callback.from_user.id)
 
     if not location:
@@ -167,10 +176,10 @@ async def weather_callback(callback: CallbackQuery):
         longitude=location["longitude"],
     )
 
-    action = callback.data.split(":")[1]
-
     if action == "today":
         text = build_weather_message(location, weather)
+    elif action == "3days":
+        text = build_multi_day_forecast(location, weather, 3)
     elif action == "7days":
         text = build_multi_day_forecast(location, weather, 7)
     else:
