@@ -9,9 +9,10 @@ router = Router()
 async def start_handler(message: Message):
     text = (
         "🌤 <b>tWeather</b>\n\n"
-        "Envie uma cidade, localização ou use:\n"
-        "/tempo\n"
-        "/buscar sorocaba"
+        "Previsão do tempo rápida e leve.\n\n"
+        "Envie uma cidade, localização ou use:\n\n"
+        "• /tempo\n"
+        "• /buscar Rio de Janeiro"
     )
 
     await message.answer(text)
