@@ -29,7 +29,7 @@ from app.utils.weather_formatter import (
 router = Router()
 
 
-async def send_weather_card(message: Message, location, weather):
+async def send_weather_card(message: Message, location, weather, caption=None):
     enabled = await are_cards_enabled(message.chat.id)
 
     if not enabled:
@@ -53,7 +53,9 @@ async def send_weather_card(message: Message, location, weather):
             BufferedInputFile(
                 image_bytes,
                 filename="weather.png",
-            )
+            ),
+            caption=caption,
+            reply_markup=weather_keyboard(),
         )
     except Exception:
         return
