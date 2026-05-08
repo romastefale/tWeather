@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
@@ -32,6 +34,7 @@ from app.utils.weather_formatter import (
 )
 
 router = Router()
+logger = logging.getLogger(__name__)
 
 
 async def send_weather_card(message: Message, location, weather, caption=None):
@@ -67,7 +70,7 @@ async def send_weather_card(message: Message, location, weather, caption=None):
             reply_markup=weather_keyboard(),
         )
     except Exception:
-        return
+        logger.exception('Failed to send weather card')
 
 
 @router.message(Command("cards"))
@@ -300,11 +303,12 @@ async def weather_callback(callback: CallbackQuery):
         await callback.answer("Card atualizado")
         return
 
-    if await are_cards_enabled(callback.message.chat.id):
-        text += (
-            "\n\n🖼 Para atualizar o card visual deste período, "
-            "clique no botão Card."
-        )
+    if callback.message:
+        if await are_cards_enabled(callback.message.chat.id):
+            text += (
+                "\n\n🖼 Para atualizar o card visual deste período, "
+                "clique no botão Card."
+            )
 
     await safe_edit_text(
         callback,
