@@ -12,25 +12,8 @@ def weather_keyboard():
                     style="primary",
                 ),
                 InlineKeyboardButton(
-                    text="Atualizar",
-                    callback_data="weather:refresh",
-                    style="primary",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="3 dias",
-                    callback_data="weather:3days",
-                    style="success",
-                ),
-                InlineKeyboardButton(
-                    text="7 dias",
-                    callback_data="weather:7days",
-                    style="primary",
-                ),
-                InlineKeyboardButton(
-                    text="15 dias",
-                    callback_data="weather:15days",
+                    text="5 dias",
+                    callback_data="weather:5days",
                     style="success",
                 ),
             ],
