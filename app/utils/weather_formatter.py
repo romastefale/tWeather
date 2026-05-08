@@ -60,18 +60,6 @@ def build_updated_time():
 
 
 
-def build_location_title(location):
-    name = location.get("name", "Local")
-
-    state = location.get("admin1")
-
-    if state:
-        return f"{name}, {state}"
-
-    return name
-
-
-
 def build_weather_message(location, weather):
     current = weather["current"]
     daily = weather["daily"]
@@ -87,10 +75,8 @@ def build_weather_message(location, weather):
 
     alerts_block = f"{alerts}\n\n" if alerts else ""
 
-    location_title = build_location_title(location)
-
     return (
-        f"{emoji} <b>{location_title}</b>\n\n"
+        f"{emoji} <b>{location['name']}</b>\n\n"
         f"{weather_text}.\n"
         f"{build_temperature_text(round(daily['temperature_2m_min'][0]), round(daily['temperature_2m_max'][0]))}\n\n"
         f"<b>{round(current['temperature_2m'])}°C agora"
@@ -115,9 +101,7 @@ def build_multi_day_forecast(location, weather, days: int):
 
     updated_at = build_updated_time()
 
-    location_title = build_location_title(location)
-
-    lines = [f"🌤 <b>{location_title}</b>\n"]
+    lines = [f"🌤 <b>{location['name']}</b>\n"]
 
     for index in range(days):
         emoji, weather_text = get_weather_data(codes[index])
