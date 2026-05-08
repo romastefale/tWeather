@@ -1,12 +1,29 @@
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 
+from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
 
 router = Router()
+
+
+def build_weather_text(location, weather):
+    current = weather["current"]
+    daily = weather["daily"]
+
+    return (
+        f"🌤 <b>{location['name']}</b>\n\n"
+        f"Agora: {round(current['temperature_2m'])}°C\n"
+        f"Sensação: {round(current['apparent_temperature'])}°C\n"
+        f"💨 {round(current['wind_speed_10m'])} km/h\n"
+        f"💧 {current['relative_humidity_2m']}%\n\n"
+        f"Hoje\n"
+        f"⬇️ {round(daily['temperature_2m_min'][0])}°"
+        f" ⬆️ {round(daily['temperature_2m_max'][0])}°"
+    )
 
 
 @router.message(Command("buscar"))
@@ -34,11 +51,19 @@ async def buscar_handler(message: Message):
         longitude=first["longitude"],
     )
 
-    text = (
-        f"📍 Local salvo: {first['name']}"
+    await message.answer(f"📍 Local salvo: {first['name']}")
+
+
+@router.message(F.location)
+async def location_handler(message: Message):
+    await save_user_location(
+        user_id=message.from_user.id,
+        name="Localização Atual",
+        latitude=message.location.latitude,
+        longitude=message.location.longitude,
     )
 
-    await message.answer(text)
+    await message.answer("📍 Localização salva com sucesso.")
 
 
 @router.message(Command("tempo"))
@@ -56,18 +81,14 @@ async def tempo_handler(message: Message):
         longitude=location["longitude"],
     )
 
-    current = weather["current"]
-    daily = weather["daily"]
+    text = build_weather_text(location, weather)
 
-    text = (
-        f"🌤 <b>{location['name']}</b>\n\n"
-        f"Agora: {round(current['temperature_2m'])}°C\n"
-        f"Sensação: {round(current['apparent_temperature'])}°C\n"
-        f"💨 {round(current['wind_speed_10m'])} km/h\n"
-        f"💧 {current['relative_humidity_2m']}%\n\n"
-        f"Hoje\n"
-        f"⬇️ {round(daily['temperature_2m_min'][0])}°"
-        f" ⬆️ {round(daily['temperature_2m_max'][0])}°"
+    await message.answer(
+        text,
+        reply_markup=weather_keyboard(),
     )
 
-    await message.answer(text)
+
+@router.callback_query(F.data.startswith("weather:"))
+async def weather_callback(callback: CallbackQuery):
+    await callback.answer("Atualizado")
