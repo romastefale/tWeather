@@ -3,6 +3,25 @@ import time
 CARD_CACHE = {}
 TTL_SECONDS = 600
 
+USER_WEATHER_STATE = {}
+
+
+
+def set_weather_mode(user_id: int, mode: str):
+    USER_WEATHER_STATE[user_id] = {
+        'mode': mode,
+    }
+
+
+
+def get_weather_mode(user_id: int):
+    state = USER_WEATHER_STATE.get(user_id)
+
+    if not state:
+        return 'today'
+
+    return state.get('mode', 'today')
+
 
 
 def get_card_cache(key: str):
