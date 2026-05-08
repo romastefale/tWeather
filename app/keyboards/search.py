@@ -1,3 +1,4 @@
+from aiogram.enums import ButtonStyle
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
@@ -8,12 +9,12 @@ def confirm_location_keyboard(index: int):
                 InlineKeyboardButton(
                     text="Confirmar",
                     callback_data=f"confirm_location:{index}",
-                    extra_data={"style": "positive"},
+                    style=ButtonStyle.SUCCESS,
                 ),
                 InlineKeyboardButton(
                     text="Cancelar",
                     callback_data="cancel_location",
-                    extra_data={"style": "danger"},
+                    style=ButtonStyle.DANGER,
                 ),
             ]
         ]
