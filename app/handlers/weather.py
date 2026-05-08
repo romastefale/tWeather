@@ -11,7 +11,12 @@ from app.services.card_settings_service import (
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
-from app.utils.card_cache import get_card_cache, save_card_cache
+from app.utils.card_cache import (
+    get_card_cache,
+    get_weather_mode,
+    save_card_cache,
+    set_weather_mode,
+)
 from app.utils.pending_locations import (
     get_pending_location,
     remove_pending_location,
@@ -36,10 +41,14 @@ async def send_weather_card(message: Message, location, weather, caption=None):
         return
 
     try:
+        mode = get_weather_mode(message.chat.id)
+
         weather_code = weather['current']['weather_code']
         temperature = round(weather['current']['temperature_2m'])
 
-        cache_key = f"{location['name']}:{weather_code}:{temperature}"
+        cache_key = (
+            f"{location['name']}:{mode}:{weather_code}:{temperature}"
+        )
 
         image_bytes = get_card_cache(cache_key)
 
@@ -126,6 +135,8 @@ async def pick_location_callback(callback: CallbackQuery):
         longitude=location["longitude"],
     )
 
+    set_weather_mode(callback.from_user.id, 'today')
+
     weather = await get_weather(
         latitude=location["latitude"],
         longitude=location["longitude"],
@@ -171,6 +182,8 @@ async def location_handler(message: Message):
         longitude=message.location.longitude,
     )
 
+    set_weather_mode(message.chat.id, 'today')
+
     weather = await get_weather(
         latitude=message.location.latitude,
         longitude=message.location.longitude,
@@ -196,6 +209,8 @@ async def tempo_handler(message: Message):
         )
         return
 
+    set_weather_mode(message.chat.id, 'today')
+
     weather = await get_weather(
         latitude=location["latitude"],
         longitude=location["longitude"],
@@ -209,6 +224,9 @@ async def tempo_handler(message: Message):
 @router.message()
 async def quick_search_handler(message: Message):
     if message.text.startswith("/"):
+        return
+
+    if len(message.text.strip()) < 3:
         return
 
     if is_rate_limited(message.from_user.id):
@@ -251,26 +269,42 @@ async def weather_callback(callback: CallbackQuery):
         force_refresh=action == "refresh",
     )
 
-    if action in ["today", "refresh"]:
+    if action in ['today', 'refresh']:
+        set_weather_mode(callback.from_user.id, 'today')
         text = build_weather_message(location, weather)
     elif action == "3days":
+        set_weather_mode(callback.from_user.id, '3days')
         text = build_multi_day_forecast(location, weather, 3)
     elif action == "7days":
+        set_weather_mode(callback.from_user.id, '7days')
         text = build_multi_day_forecast(location, weather, 7)
     else:
+        set_weather_mode(callback.from_user.id, '15days')
         text = build_multi_day_forecast(location, weather, 15)
 
     if action == "card":
+        mode = get_weather_mode(callback.from_user.id)
+
+        if mode == '3days':
+            text = build_multi_day_forecast(location, weather, 3)
+        elif mode == '7days':
+            text = build_multi_day_forecast(location, weather, 7)
+        elif mode == '15days':
+            text = build_multi_day_forecast(location, weather, 15)
+        else:
+            text = build_weather_message(location, weather)
+
         if callback.message:
             await send_weather_card(callback.message, location, weather, text)
 
         await callback.answer("Card atualizado")
         return
 
-    text += (
-        "\n\n🖼 Para atualizar o card visual deste período, "
-        "clique no botão Card."
-    )
+    if await are_cards_enabled(callback.message.chat.id):
+        text += (
+            "\n\n🖼 Para atualizar o card visual deste período, "
+            "clique no botão Card."
+        )
 
     await safe_edit_text(
         callback,
