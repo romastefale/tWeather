@@ -11,6 +11,7 @@ from app.database import init_db
 from app.handlers.inline import router as inline_router
 from app.handlers.start import router as start_router
 from app.handlers.weather import router as weather_router
+from app.middlewares.error_middleware import ErrorMiddleware
 
 load_dotenv()
 
