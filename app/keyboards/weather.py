@@ -36,6 +36,11 @@ def weather_keyboard():
             ],
             [
                 InlineKeyboardButton(
+                    text="Card",
+                    callback_data="weather:card",
+                    style=ButtonStyle.PRIMARY,
+                ),
+                InlineKeyboardButton(
                     text="Trocar cidade",
                     callback_data="weather:change_city",
                     style=ButtonStyle.DANGER,
