@@ -6,12 +6,14 @@ def confirm_location_keyboard(index: int):
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="✅ Confirmar",
+                    text="Confirmar",
                     callback_data=f"confirm_location:{index}",
+                    extra_data={"style": "positive"},
                 ),
                 InlineKeyboardButton(
-                    text="❌ Cancelar",
+                    text="Cancelar",
                     callback_data="cancel_location",
+                    extra_data={"style": "danger"},
                 ),
             ]
         ]
