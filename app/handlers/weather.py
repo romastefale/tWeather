@@ -260,13 +260,22 @@ async def weather_callback(callback: CallbackQuery):
     else:
         text = build_multi_day_forecast(location, weather, 15)
 
+    if action == "card":
+        if callback.message:
+            await send_weather_card(callback.message, location, weather, text)
+
+        await callback.answer("Card atualizado")
+        return
+
+    text += (
+        "\n\n🖼 Para atualizar o card visual deste período, "
+        "clique no botão Card."
+    )
+
     await safe_edit_text(
         callback,
         text,
         reply_markup=weather_keyboard(),
     )
-
-    if callback.message and action in ["today", "refresh", "card"]:
-        await send_weather_card(callback.message, location, weather)
 
     await callback.answer("Atualizado")
