@@ -2,6 +2,7 @@ import time
 
 CARD_CACHE = {}
 TTL_SECONDS = 600
+MAX_CACHE_ITEMS = 100
 
 USER_WEATHER_STATE = {}
 
@@ -41,6 +42,16 @@ def get_card_cache(key: str):
 
 
 def save_card_cache(key: str, data):
+    cleanup_card_cache()
+
+    if len(CARD_CACHE) >= MAX_CACHE_ITEMS:
+        oldest_key = min(
+            CARD_CACHE,
+            key=lambda k: CARD_CACHE[k]['created_at'],
+        )
+
+        CARD_CACHE.pop(oldest_key, None)
+
     CARD_CACHE[key] = {
         'created_at': time.time(),
         'data': data,
