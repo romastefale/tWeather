@@ -84,6 +84,7 @@ async def pick_location_callback(callback: CallbackQuery):
     weather = await get_weather(
         latitude=location["latitude"],
         longitude=location["longitude"],
+        force_refresh=True,
     )
 
     text = build_weather_message(location, weather)
@@ -128,6 +129,7 @@ async def location_handler(message: Message):
     weather = await get_weather(
         latitude=message.location.latitude,
         longitude=message.location.longitude,
+        force_refresh=True,
     )
 
     location = {"name": location_name}
@@ -158,6 +160,7 @@ async def tempo_handler(message: Message):
     weather = await get_weather(
         latitude=location["latitude"],
         longitude=location["longitude"],
+        force_refresh=True,
     )
 
     text = build_weather_message(location, weather)
@@ -219,26 +222,12 @@ async def weather_callback(callback: CallbackQuery):
     weather = await get_weather(
         latitude=location["latitude"],
         longitude=location["longitude"],
-        force_refresh=action == "refresh",
+        force_refresh=True,
     )
 
-    current_mode = get_weather_mode(callback.from_user.id)
-
-    if action == "refresh":
-        action = current_mode
-
-    if action == "today":
-        set_weather_mode(callback.from_user.id, "today")
-        text = build_weather_message(location, weather)
-    elif action == "3days":
-        set_weather_mode(callback.from_user.id, "3days")
-        text = build_multi_day_forecast(location, weather, 3)
-    elif action == "7days":
-        set_weather_mode(callback.from_user.id, "7days")
-        text = build_multi_day_forecast(location, weather, 7)
-    elif action == "15days":
-        set_weather_mode(callback.from_user.id, "15days")
-        text = build_multi_day_forecast(location, weather, 15)
+    if action == "5days":
+        set_weather_mode(callback.from_user.id, "5days")
+        text = build_multi_day_forecast(location, weather, 5)
     else:
         set_weather_mode(callback.from_user.id, "today")
         text = build_weather_message(location, weather)
