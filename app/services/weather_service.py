@@ -4,9 +4,12 @@ from app.services.cache_service import (
     get_cached_weather,
     save_weather_cache,
 )
+from app.utils.logger import get_logger
 from app.utils.retry import async_retry
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+
+logger = get_logger(__name__)
 
 
 async def get_weather(
@@ -19,6 +22,7 @@ async def get_weather(
     cached = await get_cached_weather(cache_key)
 
     if cached and not force_refresh:
+        logger.info("weather cache hit: %s", cache_key)
         return cached
 
     params = {
@@ -48,6 +52,12 @@ async def get_weather(
     }
 
     async def fetch_weather():
+        logger.info(
+            "fetching weather lat=%s lon=%s",
+            latitude,
+            longitude,
+        )
+
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 WEATHER_URL,
@@ -62,10 +72,15 @@ async def get_weather(
 
         await save_weather_cache(cache_key, data)
 
+        logger.info("weather updated: %s", cache_key)
+
         return data
 
-    except Exception:
+    except Exception as error:
+        logger.warning("weather fetch failed: %s", error)
+
         if cached:
+            logger.info("using cached weather fallback: %s", cache_key)
             return cached
 
         raise
