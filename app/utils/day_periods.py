@@ -35,7 +35,10 @@ def build_day_periods(hourly):
         emoji, text = data
 
         lines.append(
-            f"> {period_name} • {emoji} {text}."
+            f"{period_name} • {emoji} {text}."
         )
 
-    return "\n".join(lines)
+    if not lines:
+        return ""
+
+    return "<blockquote>" + "\n".join(lines) + "</blockquote>"
