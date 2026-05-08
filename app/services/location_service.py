@@ -3,6 +3,14 @@ import time
 from app.database import get_db
 
 
+
+def normalize_location_text(value: str | None):
+    if value is None:
+        return None
+
+    return " ".join(str(value).strip().split())
+
+
 async def save_user_location(
     user_id: int,
     name: str,
@@ -11,6 +19,10 @@ async def save_user_location(
     country: str | None = None,
     admin1: str | None = None,
 ) -> None:
+    name = normalize_location_text(name)
+    country = normalize_location_text(country)
+    admin1 = normalize_location_text(admin1)
+
     async with get_db() as db:
         await db.execute(
             """
