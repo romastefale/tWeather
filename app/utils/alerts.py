@@ -7,16 +7,16 @@ def build_weather_alerts(weather):
     max_temp = daily["temperature_2m_max"]
     min_temp = daily["temperature_2m_min"]
 
-    if rain[0] >= 80:
+    if rain and rain[0] >= 80:
         alerts.append("⚠️ Alta chance de chuva hoje.")
 
-    if max_temp[0] >= 35:
+    if max_temp and max_temp[0] >= 35:
         alerts.append("🥵 Calor intenso previsto para hoje.")
 
-    if min_temp[0] <= 5:
+    if min_temp and min_temp[0] <= 5:
         alerts.append("🥶 Temperaturas muito baixas durante a madrugada.")
 
-    if rain[1] >= 80:
+    if len(rain) > 1 and rain[1] >= 80:
         alerts.append("🌧 Chuva forte prevista para amanhã.")
 
     return "\n".join(alerts)
