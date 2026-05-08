@@ -7,6 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from dotenv import load_dotenv
 
+from app.database import init_db
 from app.handlers.start import router as start_router
 
 load_dotenv()
@@ -16,6 +17,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 async def main():
     logging.basicConfig(level=logging.INFO)
+
+    await init_db()
 
     bot = Bot(
         token=BOT_TOKEN,
