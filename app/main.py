@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from app.database import init_db
 from app.handlers.start import router as start_router
+from app.handlers.weather import router as weather_router
 
 load_dotenv()
 
@@ -26,7 +27,9 @@ async def main():
     )
 
     dp = Dispatcher()
+
     dp.include_router(start_router)
+    dp.include_router(weather_router)
 
     await dp.start_polling(bot)
 
