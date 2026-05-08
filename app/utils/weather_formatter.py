@@ -124,7 +124,7 @@ def build_multi_day_forecast(location, weather, days: int):
 
     location_name = get_location_name(location)
 
-    lines = [f"🌤 <b>{location_name}</b>\n"]
+    lines = [f"🌤 <b>{location_name}</b>"]
 
     for index in range(days):
         emoji, weather_text = get_weather_data(codes[index])
@@ -135,15 +135,14 @@ def build_multi_day_forecast(location, weather, days: int):
 
         lines.append(
             (
-                f"{emoji} <b>{formatted_date}</b>\n\n"
-                f"{weather_text}.\n"
-                f"{build_temperature_text(round(min_temp[index]), round(max_temp[index]))}\n\n"
-                f"<b>⬇️ {round(min_temp[index])}°"
+                f"<b>{formatted_date}</b> • "
+                f"{emoji} <i>{weather_text}</i>\n"
+                f"⬇️ {round(min_temp[index])}°"
                 f" • ⬆️ {round(max_temp[index])}°"
-                f" • ☔ {rain[index]}%</b>\n"
+                f" • ☔ {rain[index]}%"
             )
         )
 
-    lines.append(f"\n<i>Atualizado às {updated_at}</i>")
+    lines.append(f"<i>Atualizado às {updated_at}</i>")
 
-    return "\n".join(lines)
+    return "\n\n".join(lines)
