@@ -46,6 +46,21 @@ def draw_gradient(draw, color1, color2):
 
 
 
+def draw_weather_icon(draw, weather_code: int):
+    if weather_code in [0, 1]:
+        draw.ellipse((760, 170, 930, 340), fill=(255, 215, 80))
+    elif weather_code in [2, 3, 45, 48]:
+        draw.ellipse((730, 190, 920, 320), fill=(240, 240, 245))
+        draw.ellipse((820, 160, 980, 300), fill=(225, 225, 235))
+    else:
+        draw.ellipse((730, 190, 920, 320), fill=(230, 230, 235))
+        draw.ellipse((820, 160, 980, 300), fill=(210, 210, 225))
+
+        for x in [780, 840, 900]:
+            draw.line((x, 330, x - 20, 390), fill=(180, 220, 255), width=10)
+
+
+
 def render_weather_card(location, weather):
     current = weather['current']
     daily = weather['daily']
@@ -66,94 +81,36 @@ def render_weather_card(location, weather):
 
     draw = ImageDraw.Draw(image, 'RGBA')
 
-    draw.rounded_rectangle(
-        (40, 40, WIDTH - 40, HEIGHT - 40),
-        radius=55,
-        fill=(255, 255, 255, 28),
-    )
+    draw.rounded_rectangle((40, 40, WIDTH - 40, HEIGHT - 40), radius=55, fill=(255, 255, 255, 28))
+
+    draw_weather_icon(draw, weather_code)
 
     title_font = load_font(54)
     temp_font = load_font(250)
     body_font = load_font(42)
     small_font = load_font(34)
 
-    draw.text(
-        (80, 90),
-        location['name'],
-        fill='white',
-        font=title_font,
-    )
+    draw.text((80, 90), location['name'], fill='white', font=title_font)
 
-    draw.text(
-        (80, 220),
-        f"{round(current['temperature_2m'])}°",
-        fill='white',
-        font=temp_font,
-    )
+    draw.text((80, 220), f"{round(current['temperature_2m'])}°", fill='white', font=temp_font)
 
-    draw.text(
-        (90, 520),
-        weather_text,
-        fill='white',
-        font=body_font,
-    )
+    draw.text((90, 520), weather_text, fill='white', font=body_font)
 
-    draw.text(
-        (90, 590),
-        f"Sensação {round(current['apparent_temperature'])}°",
-        fill=(240, 240, 240),
-        font=small_font,
-    )
+    draw.text((90, 590), f"Sensação {round(current['apparent_temperature'])}°", fill=(240, 240, 240), font=small_font)
 
     panel_y = 760
 
-    draw.rounded_rectangle(
-        (60, panel_y, WIDTH - 60, panel_y + 220),
-        radius=40,
-        fill=(255, 255, 255, 35),
-    )
+    draw.rounded_rectangle((60, panel_y, WIDTH - 60, panel_y + 220), radius=40, fill=(255, 255, 255, 35))
 
-    draw.text(
-        (120, panel_y + 45),
-        'Mínima',
-        fill=(240, 240, 240),
-        font=small_font,
-    )
+    sections = [
+        ('Mínima', f"{round(daily['temperature_2m_min'][0])}°", 120),
+        ('Máxima', f"{round(daily['temperature_2m_max'][0])}°", 430),
+        ('Chuva', f"{daily['precipitation_probability_max'][0]}%", 760),
+    ]
 
-    draw.text(
-        (120, panel_y + 105),
-        f"{round(daily['temperature_2m_min'][0])}°",
-        fill='white',
-        font=body_font,
-    )
-
-    draw.text(
-        (430, panel_y + 45),
-        'Máxima',
-        fill=(240, 240, 240),
-        font=small_font,
-    )
-
-    draw.text(
-        (430, panel_y + 105),
-        f"{round(daily['temperature_2m_max'][0])}°",
-        fill='white',
-        font=body_font,
-    )
-
-    draw.text(
-        (760, panel_y + 45),
-        'Chuva',
-        fill=(240, 240, 240),
-        font=small_font,
-    )
-
-    draw.text(
-        (760, panel_y + 105),
-        f"{daily['precipitation_probability_max'][0]}%",
-        fill='white',
-        font=body_font,
-    )
+    for title, value, x in sections:
+        draw.text((x, panel_y + 45), title, fill=(240, 240, 240), font=small_font)
+        draw.text((x, panel_y + 105), value, fill='white', font=body_font)
 
     output = BytesIO()
 
