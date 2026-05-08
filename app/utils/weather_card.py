@@ -9,7 +9,16 @@ HEIGHT = 1350
 
 
 
-def get_background_colors(weather_code: int):
+def is_night(weather):
+    current_hour = int(weather.get('current', {}).get('time', '12:00').split('T')[-1].split(':')[0])
+    return current_hour >= 18 or current_hour <= 5
+
+
+
+def get_background_colors(weather_code: int, night: bool = False):
+    if night:
+        return ((20, 30, 60), (50, 70, 110))
+
     if weather_code in [0, 1]:
         return ((76, 163, 255), (140, 210, 255))
 
@@ -46,7 +55,12 @@ def draw_gradient(draw, color1, color2):
 
 
 
-def draw_weather_icon(draw, weather_code: int):
+def draw_weather_icon(draw, weather_code: int, night: bool):
+    if night:
+        draw.ellipse((780, 170, 930, 320), fill=(245, 245, 220))
+        draw.ellipse((830, 160, 950, 310), fill=(40, 60, 100))
+        return
+
     if weather_code in [0, 1]:
         draw.ellipse((760, 170, 930, 340), fill=(255, 215, 80))
     elif weather_code in [2, 3, 45, 48]:
@@ -69,7 +83,9 @@ def render_weather_card(location, weather):
 
     _, weather_text = get_weather_data(weather_code)
 
-    color1, color2 = get_background_colors(weather_code)
+    night = is_night(weather)
+
+    color1, color2 = get_background_colors(weather_code, night)
 
     image = Image.new('RGB', (WIDTH, HEIGHT), color1)
 
@@ -83,7 +99,7 @@ def render_weather_card(location, weather):
 
     draw.rounded_rectangle((40, 40, WIDTH - 40, HEIGHT - 40), radius=55, fill=(255, 255, 255, 28))
 
-    draw_weather_icon(draw, weather_code)
+    draw_weather_icon(draw, weather_code, night)
 
     title_font = load_font(54)
     temp_font = load_font(250)
@@ -111,6 +127,18 @@ def render_weather_card(location, weather):
     for title, value, x in sections:
         draw.text((x, panel_y + 45), title, fill=(240, 240, 240), font=small_font)
         draw.text((x, panel_y + 105), value, fill='white', font=body_font)
+
+    mini_days = ['Hoje', 'Amanhã', '3° dia']
+
+    mini_y = 1080
+
+    draw.rounded_rectangle((60, mini_y, WIDTH - 60, mini_y + 170), radius=35, fill=(255, 255, 255, 25))
+
+    for index, label in enumerate(mini_days):
+        x = 120 + (index * 300)
+
+        draw.text((x, mini_y + 30), label, fill=(240, 240, 240), font=small_font)
+        draw.text((x, mini_y + 90), f"{round(daily['temperature_2m_max'][index])}°", fill='white', font=body_font)
 
     output = BytesIO()
 
