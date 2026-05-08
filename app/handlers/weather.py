@@ -6,7 +6,10 @@ from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
-from app.utils.weather_formatter import build_weather_message
+from app.utils.weather_formatter import (
+    build_multi_day_forecast,
+    build_weather_message,
+)
 
 router = Router()
 
@@ -76,4 +79,29 @@ async def tempo_handler(message: Message):
 
 @router.callback_query(F.data.startswith("weather:"))
 async def weather_callback(callback: CallbackQuery):
+    location = await get_user_location(callback.from_user.id)
+
+    if not location:
+        await callback.answer("Local não encontrado", show_alert=True)
+        return
+
+    weather = await get_weather(
+        latitude=location["latitude"],
+        longitude=location["longitude"],
+    )
+
+    action = callback.data.split(":")[1]
+
+    if action == "today":
+        text = build_weather_message(location, weather)
+    elif action == "7days":
+        text = build_multi_day_forecast(location, weather, 7)
+    else:
+        text = build_multi_day_forecast(location, weather, 15)
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=weather_keyboard(),
+    )
+
     await callback.answer("Atualizado")
