@@ -69,6 +69,14 @@ def sanitize_text(text):
 
 
 
+def get_location_name(location):
+    try:
+        return sanitize_text(location["name"])
+    except Exception:
+        return "Local"
+
+
+
 def build_weather_message(location, weather):
     current = weather["current"]
     daily = weather["daily"]
@@ -84,7 +92,7 @@ def build_weather_message(location, weather):
 
     alerts_block = f"{alerts}\n\n" if alerts else ""
 
-    location_name = sanitize_text(location.get("name", "Local"))
+    location_name = get_location_name(location)
 
     weather_text = sanitize_text(weather_text)
 
@@ -114,7 +122,7 @@ def build_multi_day_forecast(location, weather, days: int):
 
     updated_at = build_updated_time()
 
-    location_name = sanitize_text(location.get("name", "Local"))
+    location_name = get_location_name(location)
 
     lines = [f"🌤 <b>{location_name}</b>\n"]
 
