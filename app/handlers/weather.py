@@ -12,6 +12,7 @@ from app.utils.pending_locations import (
     remove_pending_location,
     set_pending_location,
 )
+from app.utils.rate_limit import is_rate_limited
 from app.utils.reverse_geocoding import reverse_geocode
 from app.utils.telegram import safe_edit_text
 from app.utils.weather_formatter import (
@@ -24,6 +25,9 @@ router = Router()
 
 @router.message(Command("buscar"))
 async def buscar_handler(message: Message):
+    if is_rate_limited(message.from_user.id):
+        return
+
     query = message.text.replace("/buscar", "").strip()
 
     if not query:
@@ -98,6 +102,9 @@ async def cancel_location_callback(callback: CallbackQuery):
 
 @router.message(F.location)
 async def location_handler(message: Message):
+    if is_rate_limited(message.from_user.id):
+        return
+
     location_name = await reverse_geocode(
         message.location.latitude,
         message.location.longitude,
@@ -128,6 +135,9 @@ async def location_handler(message: Message):
 
 @router.message(Command("tempo"))
 async def tempo_handler(message: Message):
+    if is_rate_limited(message.from_user.id):
+        return
+
     location = await get_user_location(message.from_user.id)
 
     if not location:
@@ -152,6 +162,9 @@ async def tempo_handler(message: Message):
 @router.message()
 async def quick_search_handler(message: Message):
     if message.text.startswith("/"):
+        return
+
+    if is_rate_limited(message.from_user.id):
         return
 
     results = await search_location(message.text.strip())
