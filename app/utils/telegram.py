@@ -21,12 +21,12 @@ async def safe_edit_text(
             )
             return
 
-        if callback.message.photo:
-            await callback.message.edit_caption(
-                caption=text,
-                reply_markup=reply_markup,
-                parse_mode="HTML",
-            )
+        if not callback.message:
+            return
+
+        current_text = callback.message.text or callback.message.caption
+
+        if current_text == text:
             return
 
         await callback.message.edit_text(
@@ -36,10 +36,18 @@ async def safe_edit_text(
         )
 
     except TelegramBadRequest as error:
-        if "message is not modified" in str(error):
+        error_text = str(error).lower()
+
+        if "message is not modified" in error_text:
             return
 
-        logger.exception('Telegram edit failed')
+        if "message to edit not found" in error_text:
+            return
+
+        if "query is too old" in error_text:
+            return
+
+        logger.exception("Telegram edit failed")
 
     except Exception:
-        logger.exception('safe_edit_text failed')
+        logger.exception("safe_edit_text failed")
