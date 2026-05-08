@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiogram import Router
@@ -16,17 +17,21 @@ from app.utils.wmo import get_weather_data
 router = Router()
 logger = logging.getLogger(__name__)
 
+INLINE_RESULTS_LIMIT = 5
+INLINE_EMPTY_CACHE = 10
+INLINE_RESULTS_CACHE = 60
+
 
 @router.inline_query()
 async def inline_weather(query: InlineQuery):
-    text = query.query.strip()
+    text = " ".join(query.query.strip().split())
 
     if not text:
         await query.answer(
             results=[],
             switch_pm_text='Digite uma cidade para ver a previsão',
             switch_pm_parameter='start',
-            cache_time=1,
+            cache_time=INLINE_EMPTY_CACHE,
             is_personal=True,
         )
         return
@@ -36,7 +41,7 @@ async def inline_weather(query: InlineQuery):
             results=[],
             switch_pm_text='Digite pelo menos 3 caracteres',
             switch_pm_parameter='start',
-            cache_time=1,
+            cache_time=INLINE_EMPTY_CACHE,
             is_personal=True,
         )
         return
@@ -47,14 +52,29 @@ async def inline_weather(query: InlineQuery):
         logger.exception('Inline location search failed')
         return
 
+    limited_results = results[:INLINE_RESULTS_LIMIT]
+
+    weather_tasks = [
+        get_weather(
+            latitude=item["latitude"],
+            longitude=item["longitude"],
+        )
+        for item in limited_results
+    ]
+
+    weather_results = await asyncio.gather(
+        *weather_tasks,
+        return_exceptions=True,
+    )
+
     articles = []
 
-    for index, item in enumerate(results[:5]):
+    for index, item in enumerate(limited_results):
         try:
-            weather = await get_weather(
-                latitude=item["latitude"],
-                longitude=item["longitude"],
-            )
+            weather = weather_results[index]
+
+            if isinstance(weather, Exception):
+                raise weather
 
             current = weather["current"]
             daily = weather["daily"]
@@ -63,9 +83,7 @@ async def inline_weather(query: InlineQuery):
 
             message = build_weather_message(item, weather)
 
-            title = (
-                f"🌤 {item['name']}"
-            )
+            title = f"🌤 {item['name']}"
 
             if item.get('admin1'):
                 title += f", {item['admin1']}"
@@ -77,9 +95,15 @@ async def inline_weather(query: InlineQuery):
                 f"⬆️ {round(daily['temperature_2m_max'][0])}°"
             )
 
+            article_id = (
+                f"{item['latitude']}:"
+                f"{item['longitude']}:"
+                f"{item['name']}"
+            )
+
             articles.append(
                 InlineQueryResultArticle(
-                    id=str(index),
+                    id=article_id,
                     title=title,
                     description=description,
                     input_message_content=InputTextMessageContent(
@@ -94,6 +118,6 @@ async def inline_weather(query: InlineQuery):
 
     await query.answer(
         articles,
-        cache_time=60,
+        cache_time=INLINE_RESULTS_CACHE,
         is_personal=True,
     )
