@@ -4,6 +4,10 @@ from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
 from app.keyboards.location_results import multiple_locations_keyboard
 from app.keyboards.weather import weather_keyboard
+from app.services.card_settings_service import (
+    are_cards_enabled,
+    set_cards_enabled,
+)
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
 from app.services.weather_service import get_weather
@@ -25,6 +29,11 @@ router = Router()
 
 
 async def send_weather_card(message: Message, location, weather):
+    enabled = await are_cards_enabled(message.chat.id)
+
+    if not enabled:
+        return
+
     try:
         image = render_weather_card(location, weather)
 
@@ -36,6 +45,19 @@ async def send_weather_card(message: Message, location, weather):
         )
     except Exception:
         return
+
+
+@router.message(Command("cards"))
+async def cards_handler(message: Message):
+    text = message.text.lower().strip()
+
+    if 'off' in text:
+        await set_cards_enabled(message.chat.id, False)
+        await message.answer('Cards desativados.')
+        return
+
+    await set_cards_enabled(message.chat.id, True)
+    await message.answer('Cards ativados.')
 
 
 @router.message(Command("buscar"))
@@ -240,7 +262,7 @@ async def weather_callback(callback: CallbackQuery):
         reply_markup=weather_keyboard(),
     )
 
-    if callback.message and action in ["today", "refresh"]:
+    if callback.message and action in ["today", "refresh", "card"]:
         await send_weather_card(callback.message, location, weather)
 
     await callback.answer("Atualizado")
