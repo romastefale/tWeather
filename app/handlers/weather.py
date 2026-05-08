@@ -173,13 +173,16 @@ async def tempo_handler(message: Message):
 
 @router.message()
 async def quick_search_handler(message: Message):
+    if message.chat.type != "private":
+        return
+
     if not message.text:
         return
 
     if message.text.startswith("/"):
         return
 
-    query = message.text.strip()
+    query = " ".join(message.text.strip().split())
 
     if len(query) < 3:
         return
