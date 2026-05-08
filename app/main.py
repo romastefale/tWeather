@@ -8,6 +8,7 @@ from aiogram.enums import ParseMode
 from dotenv import load_dotenv
 
 from app.database import init_db
+from app.handlers.health import router as health_router
 from app.handlers.inline import router as inline_router
 from app.handlers.start import router as start_router
 from app.handlers.weather import router as weather_router
@@ -36,6 +37,7 @@ async def main():
     dp.include_router(start_router)
     dp.include_router(weather_router)
     dp.include_router(inline_router)
+    dp.include_router(health_router)
 
     try:
         await dp.start_polling(bot)
