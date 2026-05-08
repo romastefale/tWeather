@@ -52,6 +52,13 @@ def build_temperature_text(min_temp: int, max_temp: int):
 
 
 
+def build_updated_time():
+    now = datetime.now()
+
+    return now.strftime("%H:%M")
+
+
+
 def build_weather_message(location, weather):
     current = weather["current"]
     daily = weather["daily"]
@@ -63,19 +70,22 @@ def build_weather_message(location, weather):
 
     alerts = build_weather_alerts(weather)
 
+    updated_at = build_updated_time()
+
     return (
         f"{emoji} <b>{location['name']}</b>\n\n"
-        f"{round(current['temperature_2m'])}°C agora"
-        f" • Sensação {round(current['apparent_temperature'])}°C\n"
-        f"💨 {round(current['wind_speed_10m'])} km/h"
-        f" • 💧 {current['relative_humidity_2m']}%\n\n"
         f"{weather_text}.\n"
         f"{build_temperature_text(round(daily['temperature_2m_min'][0]), round(daily['temperature_2m_max'][0]))}\n\n"
-        f"{alerts}\n\n"
-        f"{periods}\n\n"
+        f"<b>{round(current['temperature_2m'])}°C agora"
+        f" • Sensação {round(current['apparent_temperature'])}°C</b>\n"
+        f"💨 {round(current['wind_speed_10m'])} km/h"
+        f" • 💧 {current['relative_humidity_2m']}%\n\n"
         f"⬇️ {round(daily['temperature_2m_min'][0])}°"
         f" • ⬆️ {round(daily['temperature_2m_max'][0])}°"
-        f" • ☔ {daily['precipitation_probability_max'][0]}%"
+        f" • ☔ {daily['precipitation_probability_max'][0]}%\n\n"
+        f"{alerts}\n\n"
+        f"{periods}\n\n"
+        f"<i>Atualizado às {updated_at}</i>"
     )
 
 
@@ -87,6 +97,8 @@ def build_multi_day_forecast(location, weather, days: int):
     max_temp = daily['temperature_2m_max']
     rain = daily['precipitation_probability_max']
     codes = daily['weather_code']
+
+    updated_at = build_updated_time()
 
     lines = [f"🌤 <b>{location['name']}</b>\n"]
 
@@ -100,10 +112,12 @@ def build_multi_day_forecast(location, weather, days: int):
                 f"{emoji} <b>{formatted_date}</b>\n\n"
                 f"{weather_text}.\n"
                 f"{build_temperature_text(round(min_temp[index]), round(max_temp[index]))}\n\n"
-                f"⬇️ {round(min_temp[index])}°"
+                f"<b>⬇️ {round(min_temp[index])}°"
                 f" • ⬆️ {round(max_temp[index])}°"
-                f" • ☔ {rain[index]}%\n"
+                f" • ☔ {rain[index]}%</b>\n"
             )
         )
+
+    lines.append(f"\n<i>Atualizado às {updated_at}</i>")
 
     return "\n".join(lines)
