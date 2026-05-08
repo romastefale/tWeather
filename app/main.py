@@ -30,6 +30,8 @@ async def main():
 
     dp = Dispatcher()
 
+    dp.update.middleware(ErrorMiddleware())
+
     dp.include_router(start_router)
     dp.include_router(weather_router)
     dp.include_router(inline_router)
