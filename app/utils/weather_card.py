@@ -52,6 +52,14 @@ def draw_gradient(draw, color1, color2):
 
 
 
+def draw_glow(draw):
+    draw.ellipse(
+        (620, -20, 1080, 430),
+        fill=(255, 255, 255, 24),
+    )
+
+
+
 def draw_weather_icon(draw, night: bool):
     if night:
         draw.ellipse((760, 90, 900, 230), fill=(245, 245, 220))
@@ -87,15 +95,17 @@ def render_weather_card(location, weather):
 
     overlay_draw = ImageDraw.Draw(overlay)
 
+    draw_glow(overlay_draw)
+
     overlay_draw.rounded_rectangle(
         (60, 60, WIDTH - 60, HEIGHT - 60),
         radius=46,
-        fill=(255, 255, 255, 20),
+        fill=(255, 255, 255, 18),
         outline=(255, 255, 255, 55),
         width=2,
     )
 
-    overlay = overlay.filter(ImageFilter.GaussianBlur(0.5))
+    overlay = overlay.filter(ImageFilter.GaussianBlur(7))
 
     image = Image.alpha_composite(
         image.convert('RGBA'),
@@ -125,14 +135,14 @@ def render_weather_card(location, weather):
     )
 
     metrics = [
-        ('〰', f"{round(current['wind_speed_10m'])} km/h", 760),
-        ('◖', f"{current['relative_humidity_2m']}%", 900),
-        ('☂', f"{daily['precipitation_probability_max'][0]}%", 1040),
+        ('Vento', f"{round(current['wind_speed_10m'])} km/h", 760),
+        ('Umidade', f"{current['relative_humidity_2m']}%", 900),
+        ('Chuva', f"{daily['precipitation_probability_max'][0]}%", 1040),
     ]
 
     divider_color = (255, 255, 255, 42)
 
-    for index, (icon, value, x) in enumerate(metrics):
+    for index, (label, value, x) in enumerate(metrics):
         if index > 0:
             draw.line(
                 (x - 70, 360, x - 70, 470),
@@ -141,14 +151,14 @@ def render_weather_card(location, weather):
             )
 
         draw.text(
-            (x - 15, 360),
-            icon,
-            fill=(235, 235, 245),
-            font=body_font,
+            (x - 48, 360),
+            label,
+            fill=(220, 225, 235),
+            font=small_font,
         )
 
         draw.text(
-            (x - 60, 430),
+            (x - 60, 425),
             value,
             fill='white',
             font=body_font,
