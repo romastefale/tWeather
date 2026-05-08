@@ -2,6 +2,9 @@ import time
 
 PENDING_LOCATIONS = {}
 TTL_SECONDS = 600
+CLEANUP_INTERVAL = 60
+LAST_CLEANUP = 0
+
 
 
 def set_pending_location(user_id: int, results: list):
@@ -30,7 +33,12 @@ def remove_pending_location(user_id: int):
 
 
 def cleanup_pending_locations():
+    global LAST_CLEANUP
+
     now = time.time()
+
+    if now - LAST_CLEANUP < CLEANUP_INTERVAL:
+        return
 
     expired = []
 
@@ -40,3 +48,5 @@ def cleanup_pending_locations():
 
     for user_id in expired:
         PENDING_LOCATIONS.pop(user_id, None)
+
+    LAST_CLEANUP = now
