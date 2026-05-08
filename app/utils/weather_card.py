@@ -52,7 +52,7 @@ def render_weather_card(location, weather):
 
     weather_code = current['weather_code']
 
-    emoji, weather_text = get_weather_data(weather_code)
+    _, weather_text = get_weather_data(weather_code)
 
     color1, color2 = get_background_colors(weather_code)
 
@@ -64,7 +64,13 @@ def render_weather_card(location, weather):
 
     image = image.filter(ImageFilter.GaussianBlur(1.2))
 
-    draw = ImageDraw.Draw(image)
+    draw = ImageDraw.Draw(image, 'RGBA')
+
+    draw.rounded_rectangle(
+        (40, 40, WIDTH - 40, HEIGHT - 40),
+        radius=55,
+        fill=(255, 255, 255, 28),
+    )
 
     title_font = load_font(54)
     temp_font = load_font(250)
