@@ -12,6 +12,7 @@ from app.handlers.inline import router as inline_router
 from app.handlers.start import router as start_router
 from app.handlers.weather import router as weather_router
 from app.middlewares.error_middleware import ErrorMiddleware
+from app.services.http_client import close_http_session
 
 load_dotenv()
 
@@ -36,7 +37,11 @@ async def main():
     dp.include_router(weather_router)
     dp.include_router(inline_router)
 
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await close_http_session()
+        await bot.session.close()
 
 
 if __name__ == "__main__":
