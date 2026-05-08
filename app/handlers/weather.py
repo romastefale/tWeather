@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from app.keyboards.search import confirm_location_keyboard
+from app.keyboards.location_results import multiple_locations_keyboard
 from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.location_service import get_user_location, save_user_location
@@ -31,29 +31,29 @@ async def buscar_handler(message: Message):
         await message.answer("Nenhum local encontrado.")
         return
 
-    first = results[0]
-
-    PENDING_LOCATIONS[message.from_user.id] = first
-
-    state = first.get("admin1", "")
-    country = first.get("country", "")
+    PENDING_LOCATIONS[message.from_user.id] = results
 
     await message.answer(
-        (
-            f"📍 Você quis dizer:\n\n"
-            f"<b>{first['name']}, {state}, {country}</b>?"
-        ),
-        reply_markup=confirm_location_keyboard(0),
+        "📍 Selecione o local desejado:",
+        reply_markup=multiple_locations_keyboard(results),
     )
 
 
-@router.callback_query(F.data.startswith("confirm_location:"))
-async def confirm_location_callback(callback: CallbackQuery):
-    location = PENDING_LOCATIONS.get(callback.from_user.id)
+@router.callback_query(F.data.startswith("pick_location:"))
+async def pick_location_callback(callback: CallbackQuery):
+    results = PENDING_LOCATIONS.get(callback.from_user.id)
 
-    if not location:
-        await callback.answer("Local expirado", show_alert=True)
+    if not results:
+        await callback.answer("Busca expirada", show_alert=True)
         return
+
+    index = int(callback.data.split(":")[1])
+
+    if index >= len(results):
+        await callback.answer("Local inválido", show_alert=True)
+        return
+
+    location = results[index]
 
     await save_user_location(
         user_id=callback.from_user.id,
@@ -76,7 +76,7 @@ async def confirm_location_callback(callback: CallbackQuery):
         reply_markup=weather_keyboard(),
     )
 
-    await callback.answer("Local confirmado")
+    await callback.answer("Local selecionado")
 
 
 @router.callback_query(F.data == "cancel_location")
@@ -97,7 +97,20 @@ async def location_handler(message: Message):
         longitude=message.location.longitude,
     )
 
-    await message.answer("📍 Localização salva com sucesso.")
+    weather = await get_weather(
+        latitude=message.location.latitude,
+        longitude=message.location.longitude,
+    )
+
+    text = build_weather_message(
+        {"name": "Localização Atual"},
+        weather,
+    )
+
+    await message.answer(
+        text,
+        reply_markup=weather_keyboard(),
+    )
 
 
 @router.message(Command("tempo"))
@@ -120,6 +133,24 @@ async def tempo_handler(message: Message):
     await message.answer(
         text,
         reply_markup=weather_keyboard(),
+    )
+
+
+@router.message()
+async def quick_search_handler(message: Message):
+    if message.text.startswith("/"):
+        return
+
+    results = await search_location(message.text.strip())
+
+    if not results:
+        return
+
+    PENDING_LOCATIONS[message.from_user.id] = results
+
+    await message.answer(
+        "📍 Selecione o local desejado:",
+        reply_markup=multiple_locations_keyboard(results),
     )
 
 
