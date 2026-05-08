@@ -1,3 +1,4 @@
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
 
@@ -19,5 +20,10 @@ async def safe_edit_text(
                 text,
                 reply_markup=reply_markup,
             )
+
+    except TelegramBadRequest as error:
+        if "message is not modified" in str(error):
+            return
+
     except Exception:
-        pass
+        return
