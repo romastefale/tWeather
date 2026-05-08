@@ -1,5 +1,8 @@
 from datetime import datetime
 
+from app.utils.day_periods import build_day_periods
+from app.utils.wmo import get_weather_data
+
 WEEKDAYS = [
     "Segunda",
     "Terça",
@@ -26,26 +29,6 @@ MONTHS = [
 ]
 
 
-def get_period_name(hour: int) -> str:
-    if 0 <= hour < 6:
-        return "🌃 Madrugada"
-    if 6 <= hour < 12:
-        return "🌅 Manhã"
-    if 12 <= hour < 18:
-        return "☀️ Tarde"
-    return "🌙 Noite"
-
-
-def get_weather_emoji(rain_probability: int) -> str:
-    if rain_probability >= 80:
-        return "⛈"
-    if rain_probability >= 50:
-        return "🌧"
-    if rain_probability >= 20:
-        return "🌦"
-    return "☀️"
-
-
 def format_ptbr_date(date_string: str) -> str:
     date = datetime.strptime(date_string, "%Y-%m-%d")
 
@@ -55,54 +38,41 @@ def format_ptbr_date(date_string: str) -> str:
     return f"{weekday}, {date.day} de {month}"
 
 
-def build_forecast_description(
-    min_temp: int,
-    max_temp: int,
-    rain_probability: int,
-) -> str:
-    if rain_probability >= 80:
-        weather_text = "Dia chuvoso com alta chance de chuva."
-    elif rain_probability >= 50:
-        weather_text = "Possibilidade de chuva ao longo do dia."
-    elif rain_probability >= 20:
-        weather_text = "Sol entre nuvens com chance de chuva isolada."
-    else:
-        weather_text = "Tempo firme e ensolarado na maior parte do dia."
 
+def build_temperature_text(min_temp: int, max_temp: int):
     if max_temp >= 32:
-        temperature_text = "Temperaturas elevadas durante a tarde."
-    elif min_temp <= 10:
-        temperature_text = "Amanhecer com temperaturas mais frias."
-    else:
-        temperature_text = (
-            f"Temperaturas entre {min_temp}° e {max_temp}°."
-        )
+        return "Temperaturas elevadas durante a tarde."
 
-    return f"{weather_text} {temperature_text}"
+    if min_temp <= 10:
+        return "Amanhecer com temperaturas mais frias."
+
+    return f"Temperaturas entre {min_temp}° e {max_temp}°."
+
 
 
 def build_weather_message(location, weather):
     current = weather["current"]
     daily = weather["daily"]
+    hourly = weather["hourly"]
 
-    description = build_forecast_description(
-        round(daily['temperature_2m_min'][0]),
-        round(daily['temperature_2m_max'][0]),
-        daily['precipitation_probability_max'][0],
-    )
+    emoji, weather_text = get_weather_data(current["weather_code"])
+
+    periods = build_day_periods(hourly)
 
     return (
-        f"🌤 <b>{location['name']}</b>\n\n"
+        f"{emoji} <b>{location['name']}</b>\n\n"
         f"Agora: {round(current['temperature_2m'])}°C\n"
         f"Sensação: {round(current['apparent_temperature'])}°C\n"
         f"💨 {round(current['wind_speed_10m'])} km/h\n"
         f"💧 {current['relative_humidity_2m']}%\n\n"
-        f"{description}\n\n"
-        f"Hoje\n"
+        f"{weather_text}.\n"
+        f"{build_temperature_text(round(daily['temperature_2m_min'][0]), round(daily['temperature_2m_max'][0]))}\n\n"
+        f"{periods}\n\n"
         f"⬇️ {round(daily['temperature_2m_min'][0])}°"
         f" ⬆️ {round(daily['temperature_2m_max'][0])}°\n"
         f"☔ Chance de chuva: {daily['precipitation_probability_max'][0]}%"
     )
+
 
 
 def build_multi_day_forecast(location, weather, days: int):
@@ -111,23 +81,20 @@ def build_multi_day_forecast(location, weather, days: int):
     min_temp = daily['temperature_2m_min']
     max_temp = daily['temperature_2m_max']
     rain = daily['precipitation_probability_max']
+    codes = daily['weather_code']
 
     lines = [f"🌤 <b>{location['name']}</b>\n"]
 
     for index in range(days):
-        emoji = get_weather_emoji(rain[index])
-        formatted_date = format_ptbr_date(dates[index])
+        emoji, weather_text = get_weather_data(codes[index])
 
-        description = build_forecast_description(
-            round(min_temp[index]),
-            round(max_temp[index]),
-            rain[index],
-        )
+        formatted_date = format_ptbr_date(dates[index])
 
         lines.append(
             (
                 f"{emoji} <b>{formatted_date}</b>\n\n"
-                f"{description}\n\n"
+                f"{weather_text}.\n"
+                f"{build_temperature_text(round(min_temp[index]), round(max_temp[index]))}\n\n"
                 f"⬇️ {round(min_temp[index])}°"
                 f" ⬆️ {round(max_temp[index])}°\n"
                 f"☔ {rain[index]}%\n"
