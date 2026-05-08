@@ -272,7 +272,12 @@ async def weather_callback(callback: CallbackQuery):
         force_refresh=action == "refresh",
     )
 
-    if action in ['today', 'refresh']:
+    current_mode = get_weather_mode(callback.from_user.id)
+
+    if action == 'refresh':
+        action = current_mode
+
+    if action == 'today':
         set_weather_mode(callback.from_user.id, 'today')
         text = build_weather_message(location, weather)
     elif action == "3days":
@@ -281,11 +286,10 @@ async def weather_callback(callback: CallbackQuery):
     elif action == "7days":
         set_weather_mode(callback.from_user.id, '7days')
         text = build_multi_day_forecast(location, weather, 7)
-    else:
+    elif action == '15days':
         set_weather_mode(callback.from_user.id, '15days')
         text = build_multi_day_forecast(location, weather, 15)
-
-    if action == "card":
+    elif action == "card":
         mode = get_weather_mode(callback.from_user.id)
 
         if mode == '3days':
@@ -302,6 +306,9 @@ async def weather_callback(callback: CallbackQuery):
 
         await callback.answer("Card atualizado")
         return
+    else:
+        set_weather_mode(callback.from_user.id, 'today')
+        text = build_weather_message(location, weather)
 
     if callback.message:
         if await are_cards_enabled(callback.message.chat.id):
