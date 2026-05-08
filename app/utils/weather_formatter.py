@@ -1,3 +1,31 @@
+from datetime import datetime
+
+WEEKDAYS = [
+    "Segunda",
+    "Terça",
+    "Quarta",
+    "Quinta",
+    "Sexta",
+    "Sábado",
+    "Domingo",
+]
+
+MONTHS = [
+    "janeiro",
+    "fevereiro",
+    "março",
+    "abril",
+    "maio",
+    "junho",
+    "julho",
+    "agosto",
+    "setembro",
+    "outubro",
+    "novembro",
+    "dezembro",
+]
+
+
 def get_period_name(hour: int) -> str:
     if 0 <= hour < 6:
         return "🌃 Madrugada"
@@ -6,6 +34,25 @@ def get_period_name(hour: int) -> str:
     if 12 <= hour < 18:
         return "☀️ Tarde"
     return "🌙 Noite"
+
+
+def get_weather_emoji(rain_probability: int) -> str:
+    if rain_probability >= 80:
+        return "⛈"
+    if rain_probability >= 50:
+        return "🌧"
+    if rain_probability >= 20:
+        return "🌦"
+    return "☀️"
+
+
+def format_ptbr_date(date_string: str) -> str:
+    date = datetime.strptime(date_string, "%Y-%m-%d")
+
+    weekday = WEEKDAYS[date.weekday()]
+    month = MONTHS[date.month - 1]
+
+    return f"{weekday}, {date.day} de {month}"
 
 
 def build_weather_message(location, weather):
@@ -35,9 +82,12 @@ def build_multi_day_forecast(location, weather, days: int):
     lines = [f"🌤 <b>{location['name']}</b>\n"]
 
     for index in range(days):
+        emoji = get_weather_emoji(rain[index])
+        formatted_date = format_ptbr_date(dates[index])
+
         lines.append(
             (
-                f"📅 {dates[index]}\n"
+                f"{emoji} <b>{formatted_date}</b>\n"
                 f"⬇️ {round(min_temp[index])}°"
                 f" ⬆️ {round(max_temp[index])}°\n"
                 f"☔ {rain[index]}%\n"
