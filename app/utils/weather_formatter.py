@@ -30,6 +30,7 @@ MONTHS = [
 ]
 
 
+
 def format_ptbr_date(date_string: str) -> str:
     date = datetime.strptime(date_string, "%Y-%m-%d")
 
@@ -64,17 +65,17 @@ def build_weather_message(location, weather):
 
     return (
         f"{emoji} <b>{location['name']}</b>\n\n"
-        f"Agora: {round(current['temperature_2m'])}°C\n"
-        f"Sensação: {round(current['apparent_temperature'])}°C\n"
-        f"💨 {round(current['wind_speed_10m'])} km/h\n"
-        f"💧 {current['relative_humidity_2m']}%\n\n"
+        f"{round(current['temperature_2m'])}°C agora"
+        f" • Sensação {round(current['apparent_temperature'])}°C\n"
+        f"💨 {round(current['wind_speed_10m'])} km/h"
+        f" • 💧 {current['relative_humidity_2m']}%\n\n"
         f"{weather_text}.\n"
         f"{build_temperature_text(round(daily['temperature_2m_min'][0]), round(daily['temperature_2m_max'][0]))}\n\n"
         f"{alerts}\n\n"
         f"{periods}\n\n"
         f"⬇️ {round(daily['temperature_2m_min'][0])}°"
-        f" ⬆️ {round(daily['temperature_2m_max'][0])}°\n"
-        f"☔ Chance de chuva: {daily['precipitation_probability_max'][0]}%"
+        f" • ⬆️ {round(daily['temperature_2m_max'][0])}°"
+        f" • ☔ {daily['precipitation_probability_max'][0]}%"
     )
 
 
@@ -100,8 +101,8 @@ def build_multi_day_forecast(location, weather, days: int):
                 f"{weather_text}.\n"
                 f"{build_temperature_text(round(min_temp[index]), round(max_temp[index]))}\n\n"
                 f"⬇️ {round(min_temp[index])}°"
-                f" ⬆️ {round(max_temp[index])}°\n"
-                f"☔ {rain[index]}%\n"
+                f" • ⬆️ {round(max_temp[index])}°"
+                f" • ☔ {rain[index]}%\n"
             )
         )
 
