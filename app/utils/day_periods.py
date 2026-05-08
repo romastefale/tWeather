@@ -35,7 +35,7 @@ def build_day_periods(hourly):
         emoji, text = data
 
         lines.append(
-            f"{period_name}\n{emoji} {text}."
+            f"{period_name} • {emoji} {text}."
         )
 
-    return "\n\n".join(lines)
+    return "\n".join(lines)
