@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.utils.alerts import build_weather_alerts
 from app.utils.day_periods import build_day_periods
@@ -53,7 +54,7 @@ def build_temperature_text(min_temp: int, max_temp: int):
 
 
 def build_updated_time():
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("America/Sao_Paulo"))
 
     return now.strftime("%H:%M")
 
@@ -72,18 +73,18 @@ def build_weather_message(location, weather):
 
     updated_at = build_updated_time()
 
+    alerts_block = f"{alerts}\n\n" if alerts else ""
+
     return (
         f"{emoji} <b>{location['name']}</b>\n\n"
         f"{weather_text}.\n"
         f"{build_temperature_text(round(daily['temperature_2m_min'][0]), round(daily['temperature_2m_max'][0]))}\n\n"
         f"<b>{round(current['temperature_2m'])}°C agora"
-        f" • Sensação {round(current['apparent_temperature'])}°C</b>\n"
-        f"💨 {round(current['wind_speed_10m'])} km/h"
-        f" • 💧 {current['relative_humidity_2m']}%\n\n"
+        f" • Sensação {round(current['apparent_temperature'])}°C</b>\n\n"
         f"⬇️ {round(daily['temperature_2m_min'][0])}°"
         f" • ⬆️ {round(daily['temperature_2m_max'][0])}°"
         f" • ☔ {daily['precipitation_probability_max'][0]}%\n\n"
-        f"{alerts}\n\n"
+        f"{alerts_block}"
         f"{periods}\n\n"
         f"<i>Atualizado às {updated_at}</i>"
     )
