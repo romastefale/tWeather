@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 INLINE_RESULTS_LIMIT = 5
 INLINE_EMPTY_CACHE = 10
 INLINE_RESULTS_CACHE = 60
+INLINE_FORECAST_DAYS = 1
 
 
 @router.inline_query()
@@ -58,6 +59,7 @@ async def inline_weather(query: InlineQuery):
         get_weather(
             latitude=item["latitude"],
             longitude=item["longitude"],
+            forecast_days=INLINE_FORECAST_DAYS,
         )
         for item in limited_results
     ]
