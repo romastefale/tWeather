@@ -12,12 +12,17 @@ def weather_keyboard():
                     style=ButtonStyle.PRIMARY,
                 ),
                 InlineKeyboardButton(
+                    text="Atualizar",
+                    callback_data="weather:refresh",
+                    style=ButtonStyle.PRIMARY,
+                ),
+            ],
+            [
+                InlineKeyboardButton(
                     text="3 dias",
                     callback_data="weather:3days",
                     style=ButtonStyle.SUCCESS,
                 ),
-            ],
-            [
                 InlineKeyboardButton(
                     text="7 dias",
                     callback_data="weather:7days",
