@@ -8,6 +8,7 @@ from app.utils.retry import async_retry
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 REQUEST_TIMEOUT = 8
+DEFAULT_FORECAST_DAYS = 5
 
 logger = get_logger(__name__)
 
@@ -16,8 +17,13 @@ async def get_weather(
     latitude: float,
     longitude: float,
     force_refresh: bool = False,
+    forecast_days: int = DEFAULT_FORECAST_DAYS,
 ):
-    cache_key = f"{round(latitude, 2)}:{round(longitude, 2)}"
+    cache_key = (
+        f"{round(latitude, 2)}:"
+        f"{round(longitude, 2)}:"
+        f"{forecast_days}"
+    )
 
     cached = await get_cached_weather(cache_key)
 
@@ -48,14 +54,15 @@ async def get_weather(
             "weather_code",
         ],
         "timezone": "auto",
-        "forecast_days": 15,
+        "forecast_days": forecast_days,
     }
 
     async def fetch_weather():
         logger.info(
-            "fetching weather lat=%s lon=%s",
+            "fetching weather lat=%s lon=%s days=%s",
             latitude,
             longitude,
+            forecast_days,
         )
 
         session = await get_http_session()
