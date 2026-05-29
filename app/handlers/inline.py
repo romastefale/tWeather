@@ -8,10 +8,12 @@ from aiogram.types import (
     InputTextMessageContent,
 )
 
-from app.keyboards.weather import weather_keyboard
 from app.services.geocoding_service import search_location
 from app.services.weather_service import get_weather
-from app.utils.weather_formatter import build_weather_message
+from app.utils.weather_formatter import (
+    build_multi_day_forecast,
+    build_weather_message,
+)
 from app.utils.wmo import get_weather_data
 
 router = Router()
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 INLINE_RESULTS_LIMIT = 5
 INLINE_EMPTY_CACHE = 10
 INLINE_RESULTS_CACHE = 60
-INLINE_FORECAST_DAYS = 1
+INLINE_FORECAST_DAYS = 5
 
 
 @router.inline_query()
@@ -83,36 +85,53 @@ async def inline_weather(query: InlineQuery):
 
             _, weather_text = get_weather_data(current['weather_code'])
 
-            message = build_weather_message(item, weather)
-
-            title = f"🌤 {item['name']}"
+            place = item['name']
 
             if item.get('admin1'):
-                title += f", {item['admin1']}"
+                place += f", {item['admin1']}"
 
-            description = (
-                f"{round(current['temperature_2m'])}°C • "
+            today_message = build_weather_message(item, weather)
+
+            today_description = (
+                f"Hoje • {round(current['temperature_2m'])}°C • "
                 f"{weather_text} • "
                 f"⬇️ {round(daily['temperature_2m_min'][0])}° "
                 f"⬆️ {round(daily['temperature_2m_max'][0])}°"
             )
 
-            article_id = (
-                f"{item['latitude']}:"
-                f"{item['longitude']}:"
-                f"{item['name']}"
+            articles.append(
+                InlineQueryResultArticle(
+                    id=f"{index}:today",
+                    title=f"🌤 {place} — Hoje",
+                    description=today_description,
+                    input_message_content=InputTextMessageContent(
+                        message_text=today_message,
+                        parse_mode="HTML",
+                    ),
+                )
+            )
+
+            multi_message = build_multi_day_forecast(
+                item,
+                weather,
+                INLINE_FORECAST_DAYS,
+            )
+
+            multi_description = (
+                f"Próximos {INLINE_FORECAST_DAYS} dias • "
+                f"⬇️ {round(daily['temperature_2m_min'][0])}° "
+                f"⬆️ {round(daily['temperature_2m_max'][0])}°"
             )
 
             articles.append(
                 InlineQueryResultArticle(
-                    id=article_id,
-                    title=title,
-                    description=description,
+                    id=f"{index}:{INLINE_FORECAST_DAYS}days",
+                    title=f"📅 {place} — {INLINE_FORECAST_DAYS} dias",
+                    description=multi_description,
                     input_message_content=InputTextMessageContent(
-                        message_text=message,
+                        message_text=multi_message,
                         parse_mode="HTML",
                     ),
-                    reply_markup=weather_keyboard(),
                 )
             )
         except Exception:
